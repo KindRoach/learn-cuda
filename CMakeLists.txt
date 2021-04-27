@@ -8,7 +8,7 @@ add_executable(LearnCuda main.cu
         common/vectorHelper.cuh common/vectorHelper.cu
         task/vectorAdd.cuh task/vectorAdd.cu
         task/vectorSum.cuh task/vectorSum.cu
-        )
+        common/deviceInfo.cu common/deviceInfo.cuh)
 
 set_target_properties(
         LearnCuda
