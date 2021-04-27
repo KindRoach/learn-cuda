@@ -6,5 +6,5 @@
 int main() {
     // checkDeviceInfo();
     // performVectorAdd(1 << 28, 1024);
-    performVectorSum(1 << 30, 1024);
+    performVectorSum(1 << 28, 1024);
 }
