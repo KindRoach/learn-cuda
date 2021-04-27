@@ -53,7 +53,7 @@ void performVectorAdd(size_t nElement, size_t nThread) {
     });
 
     std::cout << std::boolalpha << "Is same?: "
-              << isFloatVectorSame(cpuResult, gpuResult)
+              << isFloatVectorSame(cpuResult, gpuResult, 1e-8)
               << std::endl;
 
     cudaFree(d_A);

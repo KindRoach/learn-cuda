@@ -3,6 +3,6 @@
 
 
 int main() {
-     performVectorAdd(1 << 26, 1024);
-    performVectorSum(1 << 26, 1024);
+    performVectorAdd(1 << 28, 1024);
+    performVectorSum(1 << 28, 1024);
 }

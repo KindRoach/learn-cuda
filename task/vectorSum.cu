@@ -3,7 +3,7 @@
 #include "../common/utils.cuh"
 #include "../common/vectorHelper.cuh"
 
-__global__ void sumVectorOnGPU(int *vec) {
+__global__ void sumVectorOnGPU(float *vec) {
     unsigned offset = blockDim.x * blockIdx.x;
     for (unsigned i = 1; i < blockDim.x; i <<= 1) {
         if (threadIdx.x % (i << 1) == 0) {
@@ -15,7 +15,7 @@ __global__ void sumVectorOnGPU(int *vec) {
 }
 
 void performVectorSum(size_t nElement, size_t nThread) {
-    auto vec = std::vector<int>(nElement);
+    auto vec = std::vector<float>(nElement);
     randomInitVector(vec);
 
     // padding 0
@@ -25,20 +25,20 @@ void performVectorSum(size_t nElement, size_t nThread) {
         vec.emplace_back(0.f);
     }
 
-    int cpuResult = 0;
+    float cpuResult = 0;
     std::cout << "sumVectorOnCPU:";
     TIME([&]() {
-        cpuResult = std::accumulate(vec.begin(), vec.end(), 0);
+        cpuResult = std::accumulate(vec.begin(), vec.end(), 0.f);
     });
 
-    size_t nBytes = nElement * sizeof(int);
+    size_t nBytes = nElement * sizeof(float);
 
-    int *d_vec;
+    float *d_vec;
     cudaMalloc(&d_vec, nBytes);
     CHECK(cudaGetLastError())
 
-    int gpuResult = 0;
-    auto gpuOutput = std::vector<int>(nElement);
+    float gpuResult = 0;
+    auto gpuOutput = std::vector<float>(nElement);
 
     std::cout << "sumVectorOnGPU:";
     TIME([&]() {
@@ -55,8 +55,8 @@ void performVectorSum(size_t nElement, size_t nThread) {
         }
     });
 
-    printf("Is same?: %s (%d==%d)\n",
-           cpuResult == gpuResult ? "true" : "false",
+    printf("Is same?: %s (%f==%f)\n",
+           isFloatSame(cpuResult, gpuResult, 1e-1) ? "true" : "false",
            cpuResult, gpuResult);
 
     cudaFree(d_vec);
