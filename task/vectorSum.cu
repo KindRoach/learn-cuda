@@ -1,13 +1,22 @@
+#include "vectorSum.cuh"
+
 #include <numeric>
 #include <iostream>
 #include "../common/utils.cuh"
 #include "../common/vectorHelper.cuh"
 
 __global__ void sumVectorOnGPU_Ver1(float *vec, float *res) {
-    float *vec_i = vec + blockDim.x * 2 * blockIdx.x;
-    for (unsigned i = 1; i <= blockDim.x; i *= 2) {
-        if (threadIdx.x % i == 0) {
-            unsigned idx = threadIdx.x * 2;
+    float *vec_i = vec + blockDim.x * nDataBlock * blockIdx.x;
+
+    // sum nDataBlock to this threadBlock;
+    for (unsigned i = blockDim.x; i < blockDim.x * nDataBlock; i += blockDim.x) {
+        unsigned idx = threadIdx.x;
+        vec_i[idx] = vec_i[idx] + vec_i[idx + i];
+    }
+
+    for (unsigned i = 1; i < blockDim.x; i *= 2) {
+        if (threadIdx.x % (i * 2) == 0) {
+            unsigned idx = threadIdx.x;
             vec_i[idx] = vec_i[idx] + vec_i[idx + i];
         }
         __syncthreads();
@@ -17,11 +26,18 @@ __global__ void sumVectorOnGPU_Ver1(float *vec, float *res) {
 }
 
 __global__ void sumVectorOnGPU_Ver2(float *vec, float *res) {
-    float *vec_i = vec + blockDim.x * 2 * blockIdx.x;
-    for (unsigned i = 1; i <= blockDim.x; i *= 2) {
+    float *vec_i = vec + blockDim.x * nDataBlock * blockIdx.x;
+
+    // sum nDataBlock to this threadBlock;
+    for (unsigned i = blockDim.x; i < blockDim.x * nDataBlock; i += blockDim.x) {
+        unsigned idx = threadIdx.x;
+        vec_i[idx] = vec_i[idx] + vec_i[idx + i];
+    }
+
+    for (unsigned i = 2; i <= blockDim.x; i *= 2) {
         if (threadIdx.x < blockDim.x / i) {
-            unsigned idx = threadIdx.x * (i << 1);
-            vec_i[idx] = vec_i[idx] + vec_i[idx + i];
+            unsigned idx = threadIdx.x * i;
+            vec_i[idx] = vec_i[idx] + vec_i[idx + i / 2];
         }
         __syncthreads();
     }
@@ -30,8 +46,15 @@ __global__ void sumVectorOnGPU_Ver2(float *vec, float *res) {
 }
 
 __global__ void sumVectorOnGPU_Ver3(float *vec, float *res) {
-    float *vec_i = vec + blockDim.x * 2 * blockIdx.x;
-    for (unsigned i = blockDim.x; i > 0; i /= 2) {
+    float *vec_i = vec + blockDim.x * nDataBlock * blockIdx.x;
+
+    // sum nDataBlock to this threadBlock;
+    for (unsigned i = blockDim.x; i < blockDim.x * nDataBlock; i += blockDim.x) {
+        unsigned idx = threadIdx.x;
+        vec_i[idx] = vec_i[idx] + vec_i[idx + i];
+    }
+
+    for (unsigned i = blockDim.x / 2; i > 0; i /= 2) {
         if (threadIdx.x < i) {
             unsigned idx = threadIdx.x;
             vec_i[idx] = vec_i[idx] + vec_i[idx + i];
@@ -54,10 +77,9 @@ void performVectorSum(size_t nElement, size_t nThread) {
         printf(" %f --- ", cpuResult);
     });
 
-
     // padding 0 for GPU
-    size_t nBlock = (nElement + nThread * 2 - 1) / (nThread * 2);
-    nElement = nBlock * nThread * 2;
+    size_t nBlock = (nElement + nThread * nDataBlock - 1) / (nThread * nDataBlock);
+    nElement = nBlock * nThread * nDataBlock;
     for (size_t i = vec.size(); i < nElement; ++i) {
         vec.emplace_back(0.f);
     }
