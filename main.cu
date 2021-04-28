@@ -3,7 +3,8 @@
 #include "task/vectorSum.cuh"
 #include "task/nestHelloWorld.cuh"
 #include "task/memoryManage.cuh"
+#include "task/pinnedMemory.cuh"
 
 int main() {
-    memoryManage();
+    pinnedMemory(1 << 28);
 }
