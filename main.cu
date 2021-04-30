@@ -4,7 +4,9 @@
 #include "task/nestHelloWorld.cuh"
 #include "task/memoryManage.cuh"
 #include "task/pinnedMemory.cuh"
+#include "task/zeroCopyMemory.cuh"
+
 
 int main() {
-    pinnedMemory(1 << 28);
+    zeroCopyMemory(1 << 30, 1024);
 }
