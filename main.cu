@@ -6,8 +6,9 @@
 #include "task/pinnedMemory.cuh"
 #include "task/zeroCopyMemory.cuh"
 #include "task/unifiedMemory.cuh"
+#include "task/misalignedRead.cuh"
 
 
 int main() {
-    manualMemory(1 << 28, 1024);
+    misalignedRead(1 << 28, 1024, 1);
 }
