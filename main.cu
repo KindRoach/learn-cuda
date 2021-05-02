@@ -2,11 +2,12 @@
 #include "task/vectorAdd.cuh"
 #include "task/vectorSum.cuh"
 #include "task/nestHelloWorld.cuh"
-#include "task/memoryManage.cuh"
+#include "task/manualMemory.cuh"
 #include "task/pinnedMemory.cuh"
 #include "task/zeroCopyMemory.cuh"
+#include "task/unifiedMemory.cuh"
 
 
 int main() {
-    zeroCopyMemory(1 << 30, 1024);
+    manualMemory(1 << 28, 1024);
 }

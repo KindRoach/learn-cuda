@@ -1,22 +1,16 @@
 //
-// Created by kindr on 2021/4/29.
+// Created by kindr on 2021/4/30.
 //
 
-#include "zeroCopyMemory.cuh"
+#include "unifiedMemory.cuh"
 #include "../common/utils.cuh"
-#include <cstdio>
-#include <vector>
+#include "zeroCopyMemory.cuh"
 
-__global__
-void addOne(float *vec, size_t N) {
-    unsigned idx = blockDim.x * blockIdx.x + threadIdx.x;
-    if (idx < N) vec[idx] = vec[idx] + 1.f;
-}
 
-void zeroCopyMemory(size_t nElement, size_t nThread) {
+void unifiedMemory(size_t nElement, size_t nThread) {
     float *vec;
     size_t nBytes = nElement * sizeof(float);
-    cudaHostAlloc(&vec, nBytes, cudaHostAllocMapped);
+    cudaMallocManaged(&vec, nBytes, cudaMemAttachGlobal);
     CHECK(cudaGetLastError());
     memset(vec, 0, nBytes);
 
@@ -33,5 +27,6 @@ void zeroCopyMemory(size_t nElement, size_t nThread) {
     }
 
     printf("isSame?: %s", isSame ? "true" : "false");
+
     cudaFreeHost(vec);
 }
