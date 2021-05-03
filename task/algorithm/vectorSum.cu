@@ -2,8 +2,8 @@
 
 #include <numeric>
 #include <iostream>
-#include "../common/utils.cuh"
-#include "../common/vectorHelper.cuh"
+#include "../../common/utils.cuh"
+#include "../../common/vectorHelper.cuh"
 
 __global__ void sumVectorOnGPU_Ver1(float *vec, float *res) {
     float *vec_i = vec + blockDim.x * nDataBlock * blockIdx.x;

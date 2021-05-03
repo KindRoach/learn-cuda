@@ -4,7 +4,7 @@
 
 #include "pinnedMemory.cuh"
 
-#include "../common/utils.cuh"
+#include "../../common/utils.cuh"
 #include <cstdio>
 
 bool profileCopies(float *h_a, float *h_b, float *d, unsigned int n) {

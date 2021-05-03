@@ -1,12 +1,12 @@
 #include "common/deviceInfo.cuh"
-#include "task/vectorAdd.cuh"
-#include "task/vectorSum.cuh"
+#include "task/algorithm/vectorAdd.cuh"
+#include "task/algorithm/vectorSum.cuh"
 #include "task/nestHelloWorld.cuh"
-#include "task/manualMemory.cuh"
-#include "task/pinnedMemory.cuh"
-#include "task/zeroCopyMemory.cuh"
-#include "task/unifiedMemory.cuh"
-#include "task/misalignedRead.cuh"
+#include "task/memory/manualMemory.cuh"
+#include "task/memory/pinnedMemory.cuh"
+#include "task/memory/zeroCopyMemory.cuh"
+#include "task/memory/unifiedMemory.cuh"
+#include "task/memory/misalignedRead.cuh"
 
 
 int main() {

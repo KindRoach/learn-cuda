@@ -3,7 +3,7 @@
 //
 
 #include "unifiedMemory.cuh"
-#include "../common/utils.cuh"
+#include "../../common/utils.cuh"
 #include "zeroCopyMemory.cuh"
 
 

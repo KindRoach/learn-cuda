@@ -3,7 +3,7 @@
 //
 
 #include "manualMemory.cuh"
-#include "../common/utils.cuh"
+#include "../../common/utils.cuh"
 #include "zeroCopyMemory.cuh"
 
 #include <cstdio>

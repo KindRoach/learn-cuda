@@ -1,6 +1,6 @@
 #include "vectorAdd.cuh"
-#include "../common/utils.cuh"
-#include "../common/vectorHelper.cuh"
+#include "../../common/utils.cuh"
+#include "../../common/vectorHelper.cuh"
 
 #include <iostream>
 
