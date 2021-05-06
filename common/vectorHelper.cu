@@ -2,7 +2,6 @@
 #include "utils.cuh"
 
 #include <vector>
-#include <curand_kernel.h>
 
 bool isFloatSame(float a, float b, float error) {
     return a - b < error && b - a < error;

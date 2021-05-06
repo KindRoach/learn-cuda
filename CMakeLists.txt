@@ -14,7 +14,8 @@ add_executable(LearnCuda main.cu
         task/memory/pinnedMemory.cu task/memory/pinnedMemory.cuh
         task/memory/zeroCopyMemory.cu task/memory/zeroCopyMemory.cuh
         task/memory/unifiedMemory.cu task/memory/unifiedMemory.cuh
-        task/memory/misalignedRead.cu task/memory/misalignedRead.cuh)
+        task/memory/misalignedRead.cu task/memory/misalignedRead.cuh
+        task/algorithm/matrixTranspose.cu task/algorithm/matrixTranspose.cuh common/arrayHelper.cu common/arrayHelper.cuh)
 
 set_target_properties(
         LearnCuda

@@ -6,6 +6,11 @@
 #define LEARNCUDA_VECTORHELPER_CUH
 
 #include <vector>
+#include <curand_kernel.h>
+
+__global__ void init_random(curandState *state);
+
+__global__ void gpu_random(curandState *states, float *d_vec, size_t N);
 
 bool isFloatSame(float a, float b, float error);
 
