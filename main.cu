@@ -11,6 +11,8 @@
 #include "task/sharedMemory/sharedMemoryVectorSum.cuh"
 
 
+#include <cstdio>
+
 int main() {
     vectorSum(1 << 28, 1024);
     sharedMemoryVectorSum(1 << 28, 1024);

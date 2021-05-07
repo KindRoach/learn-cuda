@@ -17,6 +17,8 @@ __global__ void sumVectorOnGPU_Ver1(float *vec, float *res) {
         vec_i[idx] = vec_i[idx] + vec_i[idx + i];
     }
 
+    __syncthreads();
+
     for (unsigned i = 1; i < blockDim.x; i *= 2) {
         if (threadIdx.x % (i * 2) == 0) {
             unsigned idx = threadIdx.x;
@@ -38,6 +40,8 @@ __global__ void sumVectorOnGPU_Ver2(float *vec, float *res) {
         vec_i[idx] = vec_i[idx] + vec_i[idx + i];
     }
 
+    __syncthreads();
+
     for (unsigned i = 2; i <= blockDim.x; i *= 2) {
         if (threadIdx.x < blockDim.x / i) {
             unsigned idx = threadIdx.x * i;
@@ -58,6 +62,8 @@ __global__ void sumVectorOnGPU_Ver3(float *vec, float *res) {
         unsigned idx = threadIdx.x;
         vec_i[idx] = vec_i[idx] + vec_i[idx + i];
     }
+
+    __syncthreads();
 
     for (unsigned i = blockDim.x / 2; i > 0; i /= 2) {
         if (threadIdx.x < i) {

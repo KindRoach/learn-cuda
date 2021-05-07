@@ -11,12 +11,12 @@ add_executable(LearnCuda main.cu
         task/nestHelloWorld.cu task/nestHelloWorld.cuh
         task/algorithm/vectorAdd.cuh task/algorithm/vectorAdd.cu
         task/algorithm/vectorSum.cuh task/algorithm/vectorSum.cu
+        task/algorithm/matrixTranspose.cu task/algorithm/matrixTranspose.cuh
         task/memory/manualMemory.cu task/memory/manualMemory.cuh
         task/memory/pinnedMemory.cu task/memory/pinnedMemory.cuh
         task/memory/zeroCopyMemory.cu task/memory/zeroCopyMemory.cuh
         task/memory/unifiedMemory.cu task/memory/unifiedMemory.cuh
         task/memory/misalignedRead.cu task/memory/misalignedRead.cuh
-        task/algorithm/matrixTranspose.cu task/algorithm/matrixTranspose.cuh
         task/sharedMemory/sharedMemoryVectorSum.cu task/sharedMemory/sharedMemoryVectorSum.cuh)
 
 set_target_properties(

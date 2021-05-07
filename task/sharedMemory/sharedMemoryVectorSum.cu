@@ -12,12 +12,15 @@ extern __shared__ float smem[];
 // 相邻配对
 __global__ void sumVectorOnGPU_SharedMemory_Ver1(float *vec, float *res) {
     float *vec_i = vec + blockDim.x * nDataBlock * blockIdx.x;
+    smem[threadIdx.x] = vec_i[threadIdx.x];
 
     // sum nDataBlock to this threadBlock;
     for (unsigned i = blockDim.x; i < blockDim.x * nDataBlock; i += blockDim.x) {
         unsigned idx = threadIdx.x;
-        smem[idx] = vec_i[idx] + vec_i[idx + i];
+        smem[idx] = smem[idx] + vec_i[idx + i];
     }
+
+    __syncthreads();
 
     for (unsigned i = 1; i < blockDim.x; i *= 2) {
         if (threadIdx.x % (i * 2) == 0) {
@@ -33,12 +36,15 @@ __global__ void sumVectorOnGPU_SharedMemory_Ver1(float *vec, float *res) {
 // 改进相邻配对
 __global__ void sumVectorOnGPU_SharedMemory_Ver2(float *vec, float *res) {
     float *vec_i = vec + blockDim.x * nDataBlock * blockIdx.x;
+    smem[threadIdx.x] = vec_i[threadIdx.x];
 
     // sum nDataBlock to this threadBlock;
     for (unsigned i = blockDim.x; i < blockDim.x * nDataBlock; i += blockDim.x) {
         unsigned idx = threadIdx.x;
-        smem[idx] = vec_i[idx] + vec_i[idx + i];
+        smem[idx] = smem[idx] + vec_i[idx + i];
     }
+
+    __syncthreads();
 
     for (unsigned i = 2; i <= blockDim.x; i *= 2) {
         if (threadIdx.x < blockDim.x / i) {
@@ -54,12 +60,15 @@ __global__ void sumVectorOnGPU_SharedMemory_Ver2(float *vec, float *res) {
 // 交错配对
 __global__ void sumVectorOnGPU_SharedMemory_Ver3(float *vec, float *res) {
     float *vec_i = vec + blockDim.x * nDataBlock * blockIdx.x;
+    smem[threadIdx.x] = vec_i[threadIdx.x];
 
     // sum nDataBlock to this threadBlock;
     for (unsigned i = blockDim.x; i < blockDim.x * nDataBlock; i += blockDim.x) {
         unsigned idx = threadIdx.x;
-        smem[idx] = vec_i[idx] + vec_i[idx + i];
+        smem[idx] = smem[idx] + vec_i[idx + i];
     }
+
+    __syncthreads();
 
     for (unsigned i = blockDim.x / 2; i > 0; i /= 2) {
         if (threadIdx.x < i) {
