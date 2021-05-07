@@ -5,8 +5,6 @@
 #ifndef LEARNCUDA_VECTORSUM_CUH
 #define LEARNCUDA_VECTORSUM_CUH
 
-const size_t nDataBlock = 64;
-
-void performVectorSum(size_t nElement, size_t nThread);
+void vectorSum(size_t nElement, size_t nThread);
 
 #endif //LEARNCUDA_VECTORSUM_CUH

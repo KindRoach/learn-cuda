@@ -6,6 +6,7 @@ set(CMAKE_CUDA_STANDARD 14)
 add_executable(LearnCuda main.cu
         common/utils.cuh common/utils.cu
         common/vectorHelper.cuh common/vectorHelper.cu
+        common/arrayHelper.cu common/arrayHelper.cuh
         common/deviceInfo.cu common/deviceInfo.cuh
         task/nestHelloWorld.cu task/nestHelloWorld.cuh
         task/algorithm/vectorAdd.cuh task/algorithm/vectorAdd.cu
@@ -15,7 +16,8 @@ add_executable(LearnCuda main.cu
         task/memory/zeroCopyMemory.cu task/memory/zeroCopyMemory.cuh
         task/memory/unifiedMemory.cu task/memory/unifiedMemory.cuh
         task/memory/misalignedRead.cu task/memory/misalignedRead.cuh
-        task/algorithm/matrixTranspose.cu task/algorithm/matrixTranspose.cuh common/arrayHelper.cu common/arrayHelper.cuh)
+        task/algorithm/matrixTranspose.cu task/algorithm/matrixTranspose.cuh
+        task/sharedMemory/sharedMemoryVectorSum.cu task/sharedMemory/sharedMemoryVectorSum.cuh)
 
 set_target_properties(
         LearnCuda
