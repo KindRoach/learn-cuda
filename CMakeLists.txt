@@ -17,7 +17,8 @@ add_executable(LearnCuda main.cu
         task/memory/zeroCopyMemory.cu task/memory/zeroCopyMemory.cuh
         task/memory/unifiedMemory.cu task/memory/unifiedMemory.cuh
         task/memory/misalignedRead.cu task/memory/misalignedRead.cuh
-        task/sharedMemory/sharedMemoryVectorSum.cu task/sharedMemory/sharedMemoryVectorSum.cuh)
+        task/sharedMemory/sharedMemoryVectorSum.cu task/sharedMemory/sharedMemoryVectorSum.cuh
+        task/stream/multiKernelConcurrent.cu task/stream/multiKernelConcurrent.cuh)
 
 set_target_properties(
         LearnCuda
