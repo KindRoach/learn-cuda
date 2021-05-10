@@ -9,10 +9,11 @@
 #include "task/memory/misalignedRead.cuh"
 #include "task/sharedMemory/sharedMemoryVectorSum.cuh"
 #include "task/stream/multiKernelConcurrent.cuh"
+#include "task/stream/syncStreamWithEvent.cuh"
 
 
 #include <cstdio>
 
 int main() {
-    multiKernelConcurrent();
+    syncStreamWithEvent();
 }

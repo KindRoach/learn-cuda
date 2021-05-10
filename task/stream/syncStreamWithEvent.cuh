@@ -1,0 +1,10 @@
+//
+// Created by kindr on 2021/5/10.
+//
+
+#ifndef LEARNCUDA_SYNCSTREAMWITHEVENT_CUH
+#define LEARNCUDA_SYNCSTREAMWITHEVENT_CUH
+
+void syncStreamWithEvent();
+
+#endif //LEARNCUDA_SYNCSTREAMWITHEVENT_CUH

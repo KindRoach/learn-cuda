@@ -6,7 +6,7 @@
 #include "../../common/utils.cuh"
 #include <cstdio>
 
-const int N = 1llu << 25;
+const int N = 1 << 25;
 
 __global__
 void kernel1() {
@@ -32,12 +32,6 @@ void multiKernelConcurrent() {
     }
     CHECK(cudaGetLastError());
 
-    cudaEvent_t start, stop;
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
-    cudaEventRecord(start, nullptr);
-    CHECK(cudaGetLastError());
-
     for (int i = 0; i < n_stream; i++) {
         kernel1<<<1, 1, 0, stream[i]>>>();
         kernel2<<<1, 1, 0, stream[i]>>>();
@@ -48,19 +42,9 @@ void multiKernelConcurrent() {
         kernel2<<<1, 1>>>();
     }
 
-    cudaEventRecord(stop, nullptr);
-    cudaEventSynchronize(stop);
-    CHECK(cudaGetLastError());
-
-    float elapsed_time;
-    cudaEventElapsedTime(&elapsed_time, start, stop);
-    printf("elapsed time:%f ms\n", elapsed_time);
-
     for (int i = 0; i < n_stream; i++) {
         cudaStreamDestroy(stream[i]);
     }
 
-    cudaEventDestroy(start);
-    cudaEventDestroy(stop);
     free(stream);
 }
