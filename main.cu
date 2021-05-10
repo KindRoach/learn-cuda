@@ -1,5 +1,4 @@
 #include "common/deviceInfo.cuh"
-#include "task/nestHelloWorld.cuh"
 #include "task/algorithm/vectorAdd.cuh"
 #include "task/algorithm/vectorSum.cuh"
 #include "task/algorithm/matrixTranspose.cuh"
@@ -15,5 +14,5 @@
 #include <cstdio>
 
 int main() {
-    multiKernelConcurrent(1 << 28, 32);
+    multiKernelConcurrent();
 }

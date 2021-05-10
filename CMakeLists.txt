@@ -8,7 +8,7 @@ add_executable(LearnCuda main.cu
         common/vectorHelper.cuh common/vectorHelper.cu
         common/arrayHelper.cu common/arrayHelper.cuh
         common/deviceInfo.cu common/deviceInfo.cuh
-        task/nestHelloWorld.cu task/nestHelloWorld.cuh
+#        task/nestHelloWorld.cu task/nestHelloWorld.cuh
         task/algorithm/vectorAdd.cuh task/algorithm/vectorAdd.cu
         task/algorithm/vectorSum.cuh task/algorithm/vectorSum.cu
         task/algorithm/matrixTranspose.cu task/algorithm/matrixTranspose.cuh

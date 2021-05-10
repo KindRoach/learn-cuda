@@ -4,19 +4,28 @@
 
 #include "multiKernelConcurrent.cuh"
 #include "../../common/utils.cuh"
-#include "../memory/zeroCopyMemory.cuh"
 #include <cstdio>
 
-void multiKernelConcurrent(size_t nElement, size_t nThread) {
-    float *vec, *d_vec;
-    size_t nBytes = nElement * sizeof(float);
-    vec = static_cast<float *>(malloc(nBytes));
-    cudaMalloc(&d_vec, nBytes);
-    cudaMemset(d_vec, 0, nBytes);
-    CHECK(cudaGetLastError());
+const int N = 1llu << 25;
 
-    int n_stream = 16;
-    const size_t &nStreamBytes = n_stream * sizeof(cudaStream_t);
+__global__
+void kernel1() {
+    double sum = 0;
+    for (int i = 0; i < N; i++) sum += tan(0.1) * tan(0.1);
+    printf("sum=%g\n", sum);
+}
+
+__global__
+void kernel2() {
+    double sum = 0;
+    for (int i = 0; i < N; i++) sum += tan(0.1) * tan(0.1);
+    printf("sum=%g\n", sum);
+}
+
+void multiKernelConcurrent() {
+
+    int n_stream = 4;
+    size_t nStreamBytes = n_stream * sizeof(cudaStream_t);
     auto *stream = static_cast<cudaStream_t *>(malloc(nStreamBytes));
     for (int i = 0; i < n_stream; i++) {
         cudaStreamCreate(&stream[i]);
@@ -29,22 +38,15 @@ void multiKernelConcurrent(size_t nElement, size_t nThread) {
     cudaEventRecord(start, nullptr);
     CHECK(cudaGetLastError());
 
-    size_t nBlock = (nElement + nThread - 1) / nThread;
-//    for (int i = 0; i < n_stream; i++) {
-//        addOne<<<nBlock, nThread, 0, stream[i]>>>(vec, nElement);
-//        addOne<<<nBlock, nThread, 0, stream[i]>>>(vec, nElement);
-//        addOne<<<nBlock, nThread, 0, stream[i]>>>(vec, nElement);
-//        addOne<<<nBlock, nThread, 0, stream[i]>>>(vec, nElement);
-//    }
+    for (int i = 0; i < n_stream; i++) {
+        kernel1<<<1, 1, 0, stream[i]>>>();
+        kernel2<<<1, 1, 0, stream[i]>>>();
+    }
 
     for (int i = 0; i < n_stream; i++) {
-        addOne<<<nBlock, nThread>>>(d_vec, nElement);
-        addOne<<<nBlock, nThread>>>(d_vec, nElement);
-        addOne<<<nBlock, nThread>>>(d_vec, nElement);
-        addOne<<<nBlock, nThread>>>(d_vec, nElement);
+        kernel1<<<1, 1>>>();
+        kernel2<<<1, 1>>>();
     }
-    CHECK(cudaGetLastError());
-
 
     cudaEventRecord(stop, nullptr);
     cudaEventSynchronize(stop);
@@ -57,19 +59,6 @@ void multiKernelConcurrent(size_t nElement, size_t nThread) {
     for (int i = 0; i < n_stream; i++) {
         cudaStreamDestroy(stream[i]);
     }
-
-
-    cudaMemcpy(vec, d_vec, nBytes, cudaMemcpyDeviceToHost);
-    bool isSame = true;
-    for (size_t i = 0; i < nElement; ++i) {
-        if (vec[i] != 4.f * n_stream) {
-            isSame = false;
-        }
-    }
-
-    printf("isSame?: %s", isSame ? "true" : "false");
-
-    cudaFreeHost(vec);
 
     cudaEventDestroy(start);
     cudaEventDestroy(stop);

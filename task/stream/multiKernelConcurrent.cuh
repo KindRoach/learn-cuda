@@ -5,6 +5,6 @@
 #ifndef LEARNCUDA_MULTIKERNELCONCURRENT_CUH
 #define LEARNCUDA_MULTIKERNELCONCURRENT_CUH
 
-void multiKernelConcurrent(size_t nElement, size_t nThread);
+void multiKernelConcurrent();
 
 #endif //LEARNCUDA_MULTIKERNELCONCURRENT_CUH
