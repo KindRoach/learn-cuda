@@ -10,10 +10,11 @@
 #include "task/sharedMemory/sharedMemoryVectorSum.cuh"
 #include "task/stream/multiKernelConcurrent.cuh"
 #include "task/stream/syncStreamWithEvent.cuh"
+#include "task/stream/vectorAddMultiStream.cuh"
 
 
 #include <cstdio>
 
 int main() {
-    syncStreamWithEvent();
+    vectorAddMultiStream(1 << 28, 1024);
 }

@@ -31,6 +31,9 @@ void syncStreamWithEvent() {
 
     kernel_func<<<1, 1, 0, s2>>>();
 
+    cudaDeviceSynchronize();
+    CHECK(cudaGetLastError());
+
     cudaEventDestroy(e);
     cudaStreamDestroy(s1);
     cudaStreamDestroy(s2);

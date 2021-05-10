@@ -42,6 +42,9 @@ void multiKernelConcurrent() {
         kernel2<<<1, 1>>>();
     }
 
+    cudaDeviceSynchronize();
+    CHECK(cudaGetLastError());
+
     for (int i = 0; i < n_stream; i++) {
         cudaStreamDestroy(stream[i]);
     }

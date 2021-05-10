@@ -8,6 +8,8 @@
 #include <vector>
 #include <curand_kernel.h>
 
+void addVectorOnCPU(const std::vector<float> &A, const std::vector<float> &B, std::vector<float> &C);
+
 __global__ void init_random(curandState *state);
 
 __global__ void gpu_random(curandState *states, float *d_vec, size_t N);

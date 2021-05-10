@@ -3,6 +3,12 @@
 
 #include <vector>
 
+void addVectorOnCPU(const std::vector<float> &A, const std::vector<float> &B, std::vector<float> &C) {
+    for (size_t i = 0; i < C.size(); ++i) {
+        C[i] = A[i] + B[i];
+    }
+}
+
 bool isFloatSame(float a, float b, float error) {
     return a - b < error && b - a < error;
 }
