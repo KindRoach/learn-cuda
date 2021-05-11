@@ -6,7 +6,15 @@
 #include "vectorAddMultiStream.cuh"
 #include "../../common/arrayHelper.cuh"
 #include "../../common/utils.cuh"
-#include "../algorithm/vectorAdd.cuh"
+
+const int times = 300;
+
+__global__
+void addVectorOnGPU_1M(const float *A, const float *B, float *C, size_t N) {
+    unsigned idx = blockDim.x * blockIdx.x + threadIdx.x;
+    for (int i = 0; i < times; ++i) if (idx < N) C[idx] = A[idx] + B[idx];
+}
+
 
 void vectorAddMultiStream(size_t nElement, size_t nThread) {
     size_t nBytes = nElement * sizeof(float);
@@ -45,7 +53,7 @@ void vectorAddMultiStream(size_t nElement, size_t nThread) {
         size_t offset = i * nElementPerStream;
         cudaMemcpyAsync(&d_A[offset], &A[offset], nBytesPerStream, cudaMemcpyHostToDevice, stream[i]);
         cudaMemcpyAsync(&d_B[offset], &B[offset], nBytesPerStream, cudaMemcpyHostToDevice, stream[i]);
-        addVectorOnGPU<<< nBlockPerStream, nThread, 0, stream[i] >>>(
+        addVectorOnGPU_1M<<< nBlockPerStream, nThread, 0, stream[i] >>>(
                 &d_A[offset], &d_B[offset], &d_C[offset], nElementPerStream);
         cudaMemcpyAsync(&gpuResult[offset], &d_C[offset], nBytesPerStream, cudaMemcpyDeviceToHost, stream[i]);
     }
