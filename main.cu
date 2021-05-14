@@ -11,10 +11,11 @@
 #include "task/stream/multiKernelConcurrent.cuh"
 #include "task/stream/syncStreamWithEvent.cuh"
 #include "task/stream/vectorAddMultiStream.cuh"
+#include "task/stream/graphConcurrent.cuh"
 
 
 #include <cstdio>
 
 int main() {
-    vectorAddMultiStream(1 << 28, 1024);
+    graphConcurrent();
 }

@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.19)
 project(LearnCuda CUDA)
 
 set(CMAKE_CUDA_STANDARD 14)
+set(CMAKE_CUDA_ARCHITECTURES 75)
 
 add_executable(LearnCuda main.cu
         common/utils.cuh common/utils.cu
@@ -19,7 +20,9 @@ add_executable(LearnCuda main.cu
         task/memory/misalignedRead.cu task/memory/misalignedRead.cuh
         task/sharedMemory/sharedMemoryVectorSum.cu task/sharedMemory/sharedMemoryVectorSum.cuh
         task/stream/multiKernelConcurrent.cu task/stream/multiKernelConcurrent.cuh
-        task/stream/syncStreamWithEvent.cu task/stream/syncStreamWithEvent.cuh task/stream/vectorAddMultiStream.cu task/stream/vectorAddMultiStream.cuh)
+        task/stream/syncStreamWithEvent.cu task/stream/syncStreamWithEvent.cuh
+        task/stream/vectorAddMultiStream.cu task/stream/vectorAddMultiStream.cuh
+        task/stream/graphConcurrent.cu task/stream/graphConcurrent.cuh)
 
 set_target_properties(
         LearnCuda
