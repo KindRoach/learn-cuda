@@ -9,6 +9,7 @@ add_executable(LearnCuda main.cu
         common/vectorHelper.cuh common/vectorHelper.cu
         common/arrayHelper.cu common/arrayHelper.cuh
         common/deviceInfo.cu common/deviceInfo.cuh
+        common/randomHelper.cu common/randomHelper.cuh
         #        task/nestHelloWorld.cu task/nestHelloWorld.cuh
         task/algorithm/vectorAdd.cuh task/algorithm/vectorAdd.cu
         task/algorithm/vectorSum.cuh task/algorithm/vectorSum.cu
@@ -23,7 +24,8 @@ add_executable(LearnCuda main.cu
         task/stream/syncStreamWithEvent.cu task/stream/syncStreamWithEvent.cuh
         task/stream/vectorAddMultiStream.cu task/stream/vectorAddMultiStream.cuh
         task/stream/graphConcurrent.cu task/stream/graphConcurrent.cuh
-        task/instruction/floatPrecision.cu task/instruction/floatPrecision.cuh)
+        task/instruction/floatPrecision.cu task/instruction/floatPrecision.cuh
+        task/algorithm/matrixMultiplication.cu task/algorithm/matrixMultiplication.cuh)
 
 set_target_properties(
         LearnCuda

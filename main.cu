@@ -13,10 +13,12 @@
 #include "task/stream/vectorAddMultiStream.cuh"
 #include "task/stream/graphConcurrent.cuh"
 #include "task/instruction/floatPrecision.cuh"
+#include "task/algorithm/matrixMultiplication.cuh"
 
 
 #include <cstdio>
 
 int main() {
-    floatPrecision();
+    size_t m = 1 << 10;
+    matrixMultiplication(m, m + 1, m + 2, 32);
 }
