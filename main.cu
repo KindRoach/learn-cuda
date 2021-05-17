@@ -12,10 +12,11 @@
 #include "task/stream/syncStreamWithEvent.cuh"
 #include "task/stream/vectorAddMultiStream.cuh"
 #include "task/stream/graphConcurrent.cuh"
+#include "task/instruction/floatPrecision.cuh"
 
 
 #include <cstdio>
 
 int main() {
-    graphConcurrent();
+    floatPrecision();
 }

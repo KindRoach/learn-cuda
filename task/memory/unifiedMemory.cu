@@ -10,7 +10,7 @@
 void unifiedMemory(size_t nElement, size_t nThread) {
     float *vec;
     size_t nBytes = nElement * sizeof(float);
-    cudaMallocManaged(&vec, nBytes, cudaMemAttachGlobal);
+    cudaMallocManaged(&vec, nBytes);
     CHECK(cudaGetLastError());
     memset(vec, 0, nBytes);
 
@@ -28,5 +28,5 @@ void unifiedMemory(size_t nElement, size_t nThread) {
 
     printf("isSame?: %s", isSame ? "true" : "false");
 
-    cudaFreeHost(vec);
+    cudaFree(vec);
 }

@@ -22,7 +22,8 @@ add_executable(LearnCuda main.cu
         task/stream/multiKernelConcurrent.cu task/stream/multiKernelConcurrent.cuh
         task/stream/syncStreamWithEvent.cu task/stream/syncStreamWithEvent.cuh
         task/stream/vectorAddMultiStream.cu task/stream/vectorAddMultiStream.cuh
-        task/stream/graphConcurrent.cu task/stream/graphConcurrent.cuh)
+        task/stream/graphConcurrent.cu task/stream/graphConcurrent.cuh
+        task/instruction/floatPrecision.cu task/instruction/floatPrecision.cuh)
 
 set_target_properties(
         LearnCuda
