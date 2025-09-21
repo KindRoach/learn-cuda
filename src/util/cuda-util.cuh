@@ -3,7 +3,6 @@
 #include <vector>
 
 #include <thrust/device_vector.h>
-#include <thrust/copy.h>
 
 #include "util/vector.hpp"
 
