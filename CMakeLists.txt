@@ -1,33 +1,30 @@
-cmake_minimum_required(VERSION 3.19)
-project(LearnCuda CUDA)
+cmake_minimum_required(VERSION 3.25)
 
-set(CMAKE_CUDA_STANDARD 14)
-set(CMAKE_CUDA_ARCHITECTURES 75)
+project(Learn-cuda LANGUAGES CXX CUDA)
 
-add_executable(LearnCuda main.cu
-        common/utils.cuh common/utils.cu
-        common/vectorHelper.cuh common/vectorHelper.cu
-        common/arrayHelper.cu common/arrayHelper.cuh
-        common/deviceInfo.cu common/deviceInfo.cuh
-        common/randomHelper.cu common/randomHelper.cuh
-        #        task/nestHelloWorld.cu task/nestHelloWorld.cuh
-        task/algorithm/vectorAdd.cuh task/algorithm/vectorAdd.cu
-        task/algorithm/vectorSum.cuh task/algorithm/vectorSum.cu
-        task/algorithm/matrixTranspose.cu task/algorithm/matrixTranspose.cuh
-        task/memory/manualMemory.cu task/memory/manualMemory.cuh
-        task/memory/pinnedMemory.cu task/memory/pinnedMemory.cuh
-        task/memory/zeroCopyMemory.cu task/memory/zeroCopyMemory.cuh
-        task/memory/unifiedMemory.cu task/memory/unifiedMemory.cuh
-        task/memory/misalignedRead.cu task/memory/misalignedRead.cuh
-        task/sharedMemory/sharedMemoryVectorSum.cu task/sharedMemory/sharedMemoryVectorSum.cuh
-        task/stream/multiKernelConcurrent.cu task/stream/multiKernelConcurrent.cuh
-        task/stream/syncStreamWithEvent.cu task/stream/syncStreamWithEvent.cuh
-        task/stream/vectorAddMultiStream.cu task/stream/vectorAddMultiStream.cuh
-        task/stream/graphConcurrent.cu task/stream/graphConcurrent.cuh
-        task/instruction/floatPrecision.cu task/instruction/floatPrecision.cuh
-        task/algorithm/matrixMultiplication.cu task/algorithm/matrixMultiplication.cuh)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set_target_properties(
-        LearnCuda
-        PROPERTIES
-        CUDA_SEPARABLE_COMPILATION ON)
+function(add_cuda_target target_name)
+    add_executable(${target_name} ${ARGN})
+    set_property(TARGET ${target_name} PROPERTY CUDA_ARCHITECTURES native)
+endfunction()
+
+# Define root source directory and gather all .cu files recursively
+set(src_root "${CMAKE_CURRENT_SOURCE_DIR}/src")
+file(GLOB_RECURSE sources "${src_root}/*.cu")
+
+# For each .cu source file, create an individual executable
+# Preserves directory structure relative to src/
+foreach (file_path ${sources})
+    # Extract executable name (from filename without extension)
+    get_filename_component(target_name "${file_path}" NAME_WE)
+
+    # Extract the directory of the file
+    get_filename_component(target_dir "${file_path}" DIRECTORY)
+
+    # Compute relative path to src root for output placement
+    file(RELATIVE_PATH target_dir "${src_root}" "${target_dir}")
+
+    add_cuda_target("${target_name}" "${file_path}")
+endforeach()

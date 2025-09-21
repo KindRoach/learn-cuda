@@ -1,0 +1,10 @@
+{
+    "name": "Learn-cuda Dev Container",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "runArgs": [
+        "--runtime=nvidia",
+        "--gpus=all"
+    ]
+}
