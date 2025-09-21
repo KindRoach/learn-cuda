@@ -26,5 +26,9 @@ foreach (file_path ${sources})
     # Compute relative path to src root for output placement
     file(RELATIVE_PATH target_dir "${src_root}" "${target_dir}")
 
+    # add as cuda target
     add_cuda_target("${target_name}" "${file_path}")
-endforeach()
+
+    # Include the src directory for headers
+    target_include_directories("${target_name}" PRIVATE src)
+endforeach ()

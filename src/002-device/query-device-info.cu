@@ -5,7 +5,7 @@ int main() {
     cudaError_t error_id = cudaGetDeviceCount(&deviceCount);
 
     if (error_id != cudaSuccess) {
-        std::cout << "cudaGetDeviceCount returned " << static_cast<int>(error_id)
+        std::cout << "cudaGetDeviceCount returned " << error_id
                 << " -> " << cudaGetErrorString(error_id) << std::endl;
         std::cout << "No CUDA devices found." << std::endl;
         return 1;
