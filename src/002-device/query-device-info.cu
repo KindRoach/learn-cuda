@@ -24,16 +24,22 @@ int main() {
         std::cout << "  Registers per Block: " << deviceProp.regsPerBlock << std::endl;
         std::cout << "  Warp Size: " << deviceProp.warpSize << std::endl;
         std::cout << "  Max Threads per Block: " << deviceProp.maxThreadsPerBlock << std::endl;
-        std::cout << "  Max Threads Dimensions: ["
-                << deviceProp.maxThreadsDim[0] << ", "
-                << deviceProp.maxThreadsDim[1] << ", "
-                << deviceProp.maxThreadsDim[2] << "]" << std::endl;
-        std::cout << "  Max Grid Size: ["
-                << deviceProp.maxGridSize[0] << ", "
-                << deviceProp.maxGridSize[1] << ", "
-                << deviceProp.maxGridSize[2] << "]" << std::endl;
-        std::cout << "  Memory Bus Width: " << deviceProp.memoryBusWidth << "-bit" << std::endl;
-        std::cout << "  Multiprocessor Count: " << deviceProp.multiProcessorCount << std::endl;
+
+        int clockRateKHz = 0;
+        cudaDeviceGetAttribute(&clockRateKHz, cudaDevAttrClockRate, dev);
+        std::cout << "  Clock Rate: " << clockRateKHz / 1000 << " MHz" << std::endl;
+
+        int memClockKHz = 0;
+        cudaDeviceGetAttribute(&memClockKHz, cudaDevAttrMemoryClockRate, dev);
+        std::cout << "  Memory Clock Rate: " << memClockKHz / 1000 << " MHz" << std::endl;
+
+        int memBusWidth = 0;
+        cudaDeviceGetAttribute(&memBusWidth, cudaDevAttrGlobalMemoryBusWidth, dev);
+        std::cout << "  Memory Bus Width: " << memBusWidth << "-bit" << std::endl;
+
+        int multiprocessorCount = 0;
+        cudaDeviceGetAttribute(&multiprocessorCount, cudaDevAttrMultiProcessorCount, dev);
+        std::cout << "  Multiprocessor Count: " << multiprocessorCount << std::endl;
     }
 
     return 0;
