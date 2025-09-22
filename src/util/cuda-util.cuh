@@ -6,6 +6,12 @@
 
 #include "util/vector.hpp"
 
+void cuda_check(cudaError_t err) {
+    if (err != cudaSuccess) {
+        throw std::runtime_error(cudaGetErrorString(err));
+    }
+}
+
 template<typename T>
 void cuda_acc_check(std::vector<T> &gt, thrust::device_vector<T> d_vec) {
     size_t size = gt.size();
