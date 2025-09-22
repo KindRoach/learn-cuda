@@ -1,5 +1,7 @@
 #include <cstdio>
 
+#include "util/cuda-util.cuh"
+
 __global__ void helloFromGPU() {
     printf("Hello from GPU at (Block:%d, Thread:%d)\n", blockIdx.x, threadIdx.x);
 }
@@ -7,5 +9,5 @@ __global__ void helloFromGPU() {
 int main() {
     printf("Hello from CPU!\n");
     helloFromGPU<<<2, 5>>>();
-    cudaDeviceSynchronize();
+    cuda_check(cudaDeviceSynchronize());
 }

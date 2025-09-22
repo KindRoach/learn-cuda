@@ -50,7 +50,7 @@ void test_mem(T *ptr, size_t size) {
 
     write_kernel<<<1, size>>>(ptr);
     read_kernel<<<1, size>>>(ptr);
-    cudaDeviceSynchronize();
+    cuda_check(cudaDeviceSynchronize());
     std::cout << "\n";
 }
 

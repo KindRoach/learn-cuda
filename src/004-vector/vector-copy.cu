@@ -86,7 +86,7 @@ int main() {
         thrust::fill(d_dst.begin(), d_dst.end(), 0);
         benchmark_func_by_time(secs, [&]() {
             func(d_src, d_dst);
-            cudaDeviceSynchronize();
+            cuda_check(cudaDeviceSynchronize());
         });
         cuda_acc_check(vec, d_dst);
     }
