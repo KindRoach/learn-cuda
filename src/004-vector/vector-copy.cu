@@ -65,8 +65,7 @@ int main() {
     constexpr uint16_t thread_size = 4;
 
     size_t secs = 10;
-    size_t loop = 1000;
-    size_t size = 1000 * 1024 * 1024; // 1G elements
+    size_t size = 100 * 1024 * 1024; // 100M elements
 
     std::vector<dtype> vec(size);
     random_fill(vec);

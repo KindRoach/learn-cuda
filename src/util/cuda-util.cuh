@@ -8,7 +8,9 @@
 
 void cuda_check(cudaError_t err) {
     if (err != cudaSuccess) {
-        throw std::runtime_error(cudaGetErrorString(err));
+        auto message = cudaGetErrorString(err);
+        std::cerr << message << std::endl;
+        throw std::runtime_error(message);
     }
 }
 
