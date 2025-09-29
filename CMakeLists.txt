@@ -5,10 +5,6 @@ project(Learn-cuda LANGUAGES CXX CUDA)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-function(add_cuda_target target_name)
-
-endfunction()
-
 # Define root source directory and gather all .cu files recursively
 set(src_root "${CMAKE_CURRENT_SOURCE_DIR}/src")
 file(GLOB_RECURSE sources "${src_root}/*.cu")
@@ -28,14 +24,16 @@ foreach (file_path ${sources})
     # Add target
     add_executable("${target_name}" "${file_path}")
 
-    # Set CUDA architectures
-    set_property(TARGET ${target_name} PROPERTY CUDA_ARCHITECTURES native)
-
     # Include the src directory for headers
     target_include_directories("${target_name}" PRIVATE src)
 
-    # Set output directory to bin/<relative path of src>
+    # Set CUDA architectures
+    set_property(TARGET ${target_name} PROPERTY CUDA_ARCHITECTURES native)
+
     set_target_properties("${target_name}" PROPERTIES
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/${target_dir}"
     )
 endforeach ()
+
+# set -rdc=true for dynamic-parallelism
+set_target_properties(dynamic-parallelism PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
