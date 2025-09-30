@@ -1,6 +1,4 @@
-#include <cstdio>
-
-#include "util/cuda-util.cuh"
+#include "util/util.cuh"
 
 __global__ void hello_from_gpu() {
     printf("Hello from GPU at (Block:%d, Thread:%d)\n", blockIdx.x, threadIdx.x);

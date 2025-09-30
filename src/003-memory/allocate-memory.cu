@@ -1,7 +1,4 @@
-#include <cstdio>
-#include <iostream>
-
-#include "util/cuda-util.cuh"
+#include "util/util.cuh"
 
 template<typename T>
 __global__ void write_kernel(T *device_ptr) {

@@ -1,7 +1,4 @@
-#include "util/bench.hpp"
-#include "util/validate.hpp"
-#include "util/vector.hpp"
-#include "util/cuda-util.cuh"
+#include "util/util.cuh"
 
 template<typename T>
 __global__ void vector_copy_naive_kernel(T *src, T *dst) {

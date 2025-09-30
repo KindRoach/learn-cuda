@@ -1,6 +1,4 @@
-#include <cstdio>
-
-#include "util/cuda-util.cuh"
+#include "util/util.cuh"
 
 __global__ void hello_from_kernel(size_t kernel_id) {
     printf(

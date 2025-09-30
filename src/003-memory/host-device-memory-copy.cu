@@ -1,9 +1,4 @@
-#include <functional>
-#include <iostream>
-
-#include "util/bench.hpp"
-#include "util/cuda-util.cuh"
-#include "util/vector.hpp"
+#include "util/util.cuh"
 
 void naive_copy(void *src, void *dst, size_t bytes) {
     cudaMemcpy(dst, src, bytes, cudaMemcpyHostToDevice);
@@ -13,7 +8,6 @@ int main() {
     using dtype = float;
 
     size_t secs = 10;
-    size_t loop = 1000;
     size_t size = 1000 * 1024 * 1024; // 1G elements
     size_t bytes = size * sizeof(dtype);
 

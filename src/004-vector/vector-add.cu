@@ -1,7 +1,4 @@
-#include "util/bench.hpp"
-#include "util/validate.hpp"
-#include "util/vector.hpp"
-#include "util/cuda-util.cuh"
+#include "util/util.cuh"
 
 template<typename T>
 void vector_add_ref(std::vector<T> &a, std::vector<T> &b, std::vector<T> &c) {

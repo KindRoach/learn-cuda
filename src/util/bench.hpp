@@ -17,7 +17,7 @@ void print_human_readable_timeusage(int numIterations, std::chrono::microseconds
 }
 
 void benchmark_func(
-    int num_iter,
+    size_t num_iter,
     const std::function<void()> &func,
     double warmup_ratio = 0.1
 ) {
@@ -50,7 +50,7 @@ void benchmark_func_by_time(
     double warmup_ratio = 0.1
 ) {
     if (total_seconds <= 0) {
-        std::cerr << "Warning: total_seconds must be > 0, running func once.\n";
+        std::cerr << "Warning: total_seconds not lagger than 0, running func once.\n";
         func();
         return;
     }

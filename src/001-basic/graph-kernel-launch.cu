@@ -1,8 +1,4 @@
-#include <cstdio>
-
-#include "util/bench.hpp"
-#include "util/cuda-util.cuh"
-#include "util/validate.hpp"
+#include "util/util.cuh"
 
 template<typename T>
 __global__ void copy_data(T *src, T *dst) {
@@ -74,7 +70,6 @@ int main() {
     constexpr uint16_t block_size = 256;
 
     size_t secs = 10;
-    size_t loop = 1000;
     size_t n_kernel = 1024;
 
     std::vector<dtype> h_data(block_size);

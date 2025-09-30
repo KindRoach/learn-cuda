@@ -1,12 +1,6 @@
-#include <iostream>
 #include <numeric>
-#include <thrust/device_vector.h>
-#include <cub/cub.cuh>
 
-#include "util/bench.hpp"
-#include "util/validate.hpp"
-#include "util/vector.hpp"
-#include "util/cuda-util.cuh"
+#include "util/util.cuh"
 
 template<typename T>
 void vector_sum_ref(const std::vector<T> &vec, std::vector<T> &out) {

@@ -1,6 +1,4 @@
-#include <cstdio>
-
-#include "util/cuda-util.cuh"
+#include "util/util.cuh"
 
 template<typename T, size_t BLOCK_SIZE>
 __global__ void test_shared_memory_kernel() {
