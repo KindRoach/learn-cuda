@@ -57,6 +57,25 @@ void vector_copy_multi_ele(thrust::device_vector<T> &src, thrust::device_vector<
     );
 }
 
+template<typename T, size_t BLOCK_SIZE, size_t THREAD_SIZE>
+__global__ void vector_copy_multi_ele_misaligned_kernel(T *src, T *dst) {
+    size_t offset = (blockIdx.x * blockDim.x + threadIdx.x) * THREAD_SIZE;
+    for (size_t i = 0; i < THREAD_SIZE; ++i) {
+        dst[offset + i] = src[offset + i];
+    }
+}
+
+template<typename T, size_t BLOCK_SIZE, size_t THREAD_SIZE>
+void vector_copy_multi_ele_misaligned(thrust::device_vector<T> &src, thrust::device_vector<T> &out) {
+    size_t size = src.size();
+    check_divisible(size, BLOCK_SIZE * THREAD_SIZE, "Global size must be divisible by BLOCK_SIZE * THREAD_SIZE");
+    size_t blocksPerGrid = size / (BLOCK_SIZE * THREAD_SIZE);
+    vector_copy_multi_ele_misaligned_kernel<T, BLOCK_SIZE, THREAD_SIZE><<<blocksPerGrid, BLOCK_SIZE>>>(
+        thrust::raw_pointer_cast(src.data()),
+        thrust::raw_pointer_cast(out.data())
+    );
+}
+
 
 int main() {
     using dtype = float;
@@ -77,7 +96,8 @@ int main() {
     std::vector<std::tuple<std::string, func_t> > funcs{
         {"vector_copy_naive", vector_copy_naive<dtype, block_size>},
         {"vector_copy_naive_vec", vector_copy_naive_vec<dtype, float4, block_size>},
-        {"vector_copy_multi_ele", vector_copy_multi_ele<dtype, block_size, thread_size>}
+        {"vector_copy_multi_ele", vector_copy_multi_ele<dtype, block_size, thread_size>},
+        {"vector_copy_multi_ele_misaligned", vector_copy_multi_ele_misaligned<dtype, block_size, thread_size>},
     };
 
     for (auto [func_name,func]: funcs) {
