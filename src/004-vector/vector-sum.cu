@@ -158,7 +158,7 @@ void vector_sum_block_reduce_multi_ele(thrust::device_vector<T> &vec, thrust::de
 }
 
 int main() {
-    using dtype = float;
+    using dtype = int;
     constexpr uint16_t block_size = 256;
     constexpr uint8_t thread_size = 4;
 

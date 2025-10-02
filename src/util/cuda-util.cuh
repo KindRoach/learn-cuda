@@ -17,7 +17,7 @@ void cuda_check(cudaError_t err) {
 template<typename T>
 void cuda_acc_check(std::vector<T> &gt, thrust::device_vector<T> d_vec) {
     size_t size = gt.size();
-    std::vector<float> actual(size);
+    std::vector<T> actual(size);
     thrust::copy(d_vec.begin(), d_vec.end(), actual.begin());
     acc_check(gt, actual);
 }
