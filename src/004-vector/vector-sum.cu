@@ -2,24 +2,28 @@
 
 #include "util/util.cuh"
 
-template<typename T>
-void vector_sum_ref(const std::vector<T> &vec, std::vector<T> &out) {
+template <typename T>
+void vector_sum_ref(const std::vector<T>& vec, std::vector<T>& out)
+{
     out[0] = std::accumulate(vec.begin(), vec.end(), T{0});
 }
 
-template<typename T>
-void vector_sum_thrust_reduction(thrust::device_vector<T> &vec, thrust::device_vector<T> &out) {
+template <typename T>
+void vector_sum_thrust_reduction(thrust::device_vector<T>& vec, thrust::device_vector<T>& out)
+{
     out[0] = thrust::reduce(vec.begin(), vec.end(), T{0}, thrust::plus<T>());
 }
 
-template<typename T>
-__global__ void vector_sum_atomic_kernel(T *vec, T *out) {
+template <typename T>
+__global__ void vector_sum_atomic_kernel(T* vec, T* out)
+{
     size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
     atomicAdd(out, vec[idx]);
 }
 
-template<typename T, size_t BLOCK_SIZE>
-void vector_sum_atomic(thrust::device_vector<T> &vec, thrust::device_vector<T> &out) {
+template <typename T, size_t BLOCK_SIZE>
+void vector_sum_atomic(thrust::device_vector<T>& vec, thrust::device_vector<T>& out)
+{
     out[0] = 0;
 
     size_t size = vec.size();
@@ -33,8 +37,9 @@ void vector_sum_atomic(thrust::device_vector<T> &vec, thrust::device_vector<T> &
     );
 }
 
-template<typename T, size_t BLOCK_SIZE>
-__global__ void vector_sum_block_reduce_kernel(T *vec, T *out) {
+template <typename T, size_t BLOCK_SIZE>
+__global__ void vector_sum_block_reduce_kernel(T* vec, T* out)
+{
     __shared__ T shared_data[BLOCK_SIZE];
 
     size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -42,33 +47,39 @@ __global__ void vector_sum_block_reduce_kernel(T *vec, T *out) {
 
     shared_data[tid] = vec[idx];
     __syncthreads();
-    for (size_t stride = BLOCK_SIZE / 2; stride > 0; stride >>= 1) {
-        if (tid < stride) {
+    for (size_t stride = BLOCK_SIZE / 2; stride > 0; stride >>= 1)
+    {
+        if (tid < stride)
+        {
             shared_data[tid] += shared_data[tid + stride];
         }
         __syncthreads();
     }
 
-    if (tid == 0) {
+    if (tid == 0)
+    {
         atomicAdd(out, shared_data[0]);
     }
 }
 
-template<typename T, size_t BLOCK_SIZE>
-__global__ void vector_sum_block_reduce_cub_kernel(T *vec, T *out) {
+template <typename T, size_t BLOCK_SIZE>
+__global__ void vector_sum_block_reduce_cub_kernel(T* vec, T* out)
+{
     typedef cub::BlockReduce<T, BLOCK_SIZE> BlockReduce;
     __shared__ typename BlockReduce::TempStorage temp_storage;
 
     size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
     T block_sum = BlockReduce(temp_storage).Sum(vec[idx]);
 
-    if (threadIdx.x == 0) {
+    if (threadIdx.x == 0)
+    {
         atomicAdd(out, block_sum);
     }
 }
 
-template<typename T, size_t BLOCK_SIZE, bool USE_CUB>
-void vector_sum_block_reduce(thrust::device_vector<T> &vec, thrust::device_vector<T> &out) {
+template <typename T, size_t BLOCK_SIZE, bool USE_CUB>
+void vector_sum_block_reduce(thrust::device_vector<T>& vec, thrust::device_vector<T>& out)
+{
     out[0] = 0;
 
     size_t size = vec.size();
@@ -76,12 +87,15 @@ void vector_sum_block_reduce(thrust::device_vector<T> &vec, thrust::device_vecto
 
     size_t grid_size = size / BLOCK_SIZE;
     thrust::fill(out.begin(), out.end(), T{0});
-    if constexpr (USE_CUB) {
+    if constexpr (USE_CUB)
+    {
         vector_sum_block_reduce_cub_kernel<T, BLOCK_SIZE><<<grid_size, BLOCK_SIZE>>>(
             thrust::raw_pointer_cast(vec.data()),
             thrust::raw_pointer_cast(out.data())
         );
-    } else {
+    }
+    else
+    {
         vector_sum_block_reduce_kernel<T, BLOCK_SIZE><<<grid_size, BLOCK_SIZE>>>(
             thrust::raw_pointer_cast(vec.data()),
             thrust::raw_pointer_cast(out.data())
@@ -89,53 +103,62 @@ void vector_sum_block_reduce(thrust::device_vector<T> &vec, thrust::device_vecto
     }
 }
 
-template<typename T, size_t BLOCK_SIZE, size_t THREAD_SIZE>
-__global__ void vector_sum_block_reduce_multi_ele_cub_kernel(T *vec, T *out) {
+template <typename T, size_t BLOCK_SIZE, size_t THREAD_SIZE>
+__global__ void vector_sum_block_reduce_multi_ele_kernel(T* vec, T* out)
+{
     __shared__ T shared_data[BLOCK_SIZE];
 
     size_t idx = blockIdx.x * blockDim.x * THREAD_SIZE + threadIdx.x;
 
     T thread_sum = 0;
-    for (size_t i = 0; i < BLOCK_SIZE * THREAD_SIZE; i += BLOCK_SIZE) {
+    for (size_t i = 0; i < BLOCK_SIZE * THREAD_SIZE; i += BLOCK_SIZE)
+    {
         thread_sum += vec[idx + i];
     }
 
     size_t tid = threadIdx.x;
     shared_data[tid] = thread_sum;
     __syncthreads();
-    for (size_t stride = BLOCK_SIZE / 2; stride > 0; stride >>= 1) {
-        if (tid < stride) {
+    for (size_t stride = BLOCK_SIZE / 2; stride > 0; stride >>= 1)
+    {
+        if (tid < stride)
+        {
             shared_data[tid] += shared_data[tid + stride];
         }
         __syncthreads();
     }
 
-    if (tid == 0) {
+    if (tid == 0)
+    {
         atomicAdd(out, shared_data[0]);
     }
 }
 
-template<typename T, size_t BLOCK_SIZE, size_t THREAD_SIZE>
-__global__ void vector_sum_block_reduce_multi_ele_kernel(T *vec, T *out) {
+template <typename T, size_t BLOCK_SIZE, size_t THREAD_SIZE>
+__global__ void vector_sum_block_reduce_multi_ele_cub_kernel(T* vec, T* out)
+{
     typedef cub::BlockReduce<T, BLOCK_SIZE> BlockReduce;
     __shared__ typename BlockReduce::TempStorage temp_storage;
 
     size_t idx = blockIdx.x * blockDim.x * THREAD_SIZE + threadIdx.x;
 
     T thread_sum = 0;
-    for (size_t i = 0; i < BLOCK_SIZE * THREAD_SIZE; i += BLOCK_SIZE) {
+    for (size_t i = 0; i < BLOCK_SIZE * THREAD_SIZE; i += BLOCK_SIZE)
+    {
         thread_sum += vec[idx + i];
     }
 
     T block_sum = BlockReduce(temp_storage).Sum(thread_sum);
 
-    if (threadIdx.x == 0) {
+    if (threadIdx.x == 0)
+    {
         atomicAdd(out, block_sum);
     }
 }
 
-template<typename T, size_t BLOCK_SIZE, size_t THREAD_SIZE, bool USE_CUB>
-void vector_sum_block_reduce_multi_ele(thrust::device_vector<T> &vec, thrust::device_vector<T> &out) {
+template <typename T, size_t BLOCK_SIZE, size_t THREAD_SIZE, bool USE_CUB>
+void vector_sum_block_reduce_multi_ele(thrust::device_vector<T>& vec, thrust::device_vector<T>& out)
+{
     out[0] = 0;
 
     size_t size = vec.size();
@@ -144,12 +167,15 @@ void vector_sum_block_reduce_multi_ele(thrust::device_vector<T> &vec, thrust::de
 
     size_t grid_size = size / (BLOCK_SIZE * THREAD_SIZE);
     thrust::fill(out.begin(), out.end(), T{0});
-    if constexpr (USE_CUB) {
+    if constexpr (USE_CUB)
+    {
         vector_sum_block_reduce_multi_ele_cub_kernel<T, BLOCK_SIZE, THREAD_SIZE><<<grid_size, BLOCK_SIZE>>>(
             thrust::raw_pointer_cast(vec.data()),
             thrust::raw_pointer_cast(out.data())
         );
-    } else {
+    }
+    else
+    {
         vector_sum_block_reduce_multi_ele_kernel<T, BLOCK_SIZE, THREAD_SIZE><<<grid_size, BLOCK_SIZE>>>(
             thrust::raw_pointer_cast(vec.data()),
             thrust::raw_pointer_cast(out.data())
@@ -157,7 +183,8 @@ void vector_sum_block_reduce_multi_ele(thrust::device_vector<T> &vec, thrust::de
     }
 }
 
-int main() {
+int main()
+{
     using dtype = int;
     constexpr uint16_t block_size = 256;
     constexpr uint8_t thread_size = 4;
@@ -174,8 +201,8 @@ int main() {
     thrust::device_vector<dtype> d_vec = vec;
     thrust::device_vector<dtype> d_out(1);
 
-    using func_t = std::function<void(thrust::device_vector<dtype> &, thrust::device_vector<dtype> &)>;
-    std::vector<std::tuple<std::string, func_t> > funcs{
+    using func_t = std::function<void(thrust::device_vector<dtype>&, thrust::device_vector<dtype>&)>;
+    std::vector<std::tuple<std::string, func_t>> funcs{
         {"vector_sum_thrust_reduction", vector_sum_thrust_reduction<dtype>},
         {"vector_sum_atomic", vector_sum_atomic<dtype, block_size>},
         {"vector_sum_block_reduce", vector_sum_block_reduce<dtype, block_size, false>},
@@ -190,10 +217,12 @@ int main() {
         }
     };
 
-    for (auto [func_name, func]: funcs) {
+    for (auto [func_name, func] : funcs)
+    {
         std::cout << "\n" << func_name << ":\n";
         thrust::fill(d_out.begin(), d_out.end(), dtype{0});
-        benchmark_func_by_time(secs, [&]() {
+        benchmark_func_by_time(secs, [&]()
+        {
             func(d_vec, d_out);
             cuda_check(cudaDeviceSynchronize());
         });
