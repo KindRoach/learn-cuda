@@ -7,14 +7,14 @@ enum class layout {
 
 template<typename T>
 __host__ __device__
-T &mat(T *data, size_t ld, size_t i, size_t j) noexcept {
-    return data[i * ld + j];
+T &mat(T *data, size_t ld, size_t idx_major, size_t idx_minor) noexcept {
+    return data[idx_major * ld + idx_minor];
 }
 
 template<typename T>
 __host__ __device__
-T *mat_ptr(T *data, size_t ld, size_t i, size_t j) noexcept {
-    return &data[i * ld + j];
+T *mat_ptr(T *data, size_t ld, size_t idx_major, size_t idx_minor) noexcept {
+    return &data[idx_major * ld + idx_minor];
 }
 
 

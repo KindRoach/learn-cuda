@@ -38,7 +38,7 @@ __global__ void matrix_multiply_naive_kernel(T* a, T* b, T* c, size_t m, size_t 
 {
     size_t lda = k, ldb = b_layout == layout::row_major ? n : k, ldc = n;
     size_t x = blockIdx.x * blockDim.x + threadIdx.x;
-    size_t y = blockIdx.y * blockDim.x + threadIdx.y;
+    size_t y = blockIdx.y * blockDim.y + threadIdx.y;
 
     T sum = 0;
     for (size_t i = 0; i < k; i++)
@@ -78,11 +78,11 @@ template <typename T, layout b_layout, size_t BLOCK_SIZE>
 __global__ void matrix_multiply_tile_kernel(T* a, T* b, T* c, size_t m, size_t n, size_t k)
 {
     __shared__ T tile_a[BLOCK_SIZE][BLOCK_SIZE];
-    __shared__ T tile_b[BLOCK_SIZE][BLOCK_SIZE];
+    __shared__ T tile_b[BLOCK_SIZE][BLOCK_SIZE + 1]; // avoid bank conflict for b in col_major.
 
     size_t lda = k, ldb = b_layout == layout::row_major ? n : k, ldc = n;
     size_t x = blockIdx.x * blockDim.x + threadIdx.x;
-    size_t y = blockIdx.y * blockDim.x + threadIdx.y;
+    size_t y = blockIdx.y * blockDim.y + threadIdx.y;
 
     T sum = 0;
     for (size_t k_i = 0; k_i < k; k_i += BLOCK_SIZE)
@@ -97,7 +97,9 @@ __global__ void matrix_multiply_tile_kernel(T* a, T* b, T* c, size_t m, size_t n
         }
         else
         {
-            tile_b[threadIdx.y][threadIdx.x] = mat(b, ldb, x, k_i + threadIdx.y);
+            // Diagonal block mapping, equivalent to:
+            // tile_b[threadIdx.y][threadIdx.x] = mat(b, ldb, x, k_i + threadIdx.y);
+            tile_b[threadIdx.x][threadIdx.y] = mat(b, ldb, blockIdx.x * blockDim.x + threadIdx.y, k_i + threadIdx.x);
         }
 
         __syncthreads();
@@ -142,7 +144,7 @@ void test_matrix_multiply()
     constexpr size_t block_size = 32;
 
     size_t secs = 10;
-    size_t m = 2 * 1024, n = 512, k = 1024; // 4G FLOPs
+    size_t m = 2 * 1024, n = 512, k = 1024;
 
     std::vector<dtype> a(m * k), b(k * n), c(m * n);
     random_fill(a);
