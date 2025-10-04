@@ -31,8 +31,8 @@ void matrix_transpose_naive_read_continue(
     thrust::device_vector<T>& out,
     size_t m, size_t n)
 {
-    check_divisible(m, BLOCK_SIZE, "M must be divisible by WG_SIZE");
-    check_divisible(n, BLOCK_SIZE, "N must be divisible by WG_SIZE");
+    check_divisible(m, BLOCK_SIZE, "M must be divisible by BLOCK_SIZE");
+    check_divisible(n, BLOCK_SIZE, "N must be divisible by BLOCK_SIZE");
     dim3 grid_range = dim3(n / BLOCK_SIZE, m / BLOCK_SIZE);
     dim3 block_range = dim3(BLOCK_SIZE, BLOCK_SIZE);
     matrix_transpose_naive_read_continue_kernel<T><<<grid_range, block_range>>>(
@@ -57,8 +57,8 @@ void matrix_transpose_naive_write_continue(
     thrust::device_vector<T>& out,
     size_t m, size_t n)
 {
-    check_divisible(m, BLOCK_SIZE, "M must be divisible by WG_SIZE");
-    check_divisible(n, BLOCK_SIZE, "N must be divisible by WG_SIZE");
+    check_divisible(m, BLOCK_SIZE, "M must be divisible by BLOCK_SIZE");
+    check_divisible(n, BLOCK_SIZE, "N must be divisible by BLOCK_SIZE");
     dim3 grid_range = dim3(m / BLOCK_SIZE, n / BLOCK_SIZE);
     dim3 block_range = dim3(BLOCK_SIZE, BLOCK_SIZE);
     matrix_transpose_naive_write_continue_kernel<T><<<grid_range, block_range>>>(
@@ -92,8 +92,8 @@ void matrix_transpose_diagonal_mapping(
     thrust::device_vector<T>& out,
     size_t m, size_t n)
 {
-    check_divisible(m, BLOCK_SIZE, "M must be divisible by WG_SIZE");
-    check_divisible(n, BLOCK_SIZE, "N must be divisible by WG_SIZE");
+    check_divisible(m, BLOCK_SIZE, "M must be divisible by BLOCK_SIZE");
+    check_divisible(n, BLOCK_SIZE, "N must be divisible by BLOCK_SIZE");
     dim3 grid_range = dim3(n / BLOCK_SIZE, m / BLOCK_SIZE);
     dim3 block_range = dim3(BLOCK_SIZE, BLOCK_SIZE);
     matrix_transpose_diagonal_mapping_kernel<T, BLOCK_SIZE><<<grid_range, block_range>>>(
