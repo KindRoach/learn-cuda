@@ -117,6 +117,119 @@ void matrix_vector_multiply_row_split_warp(
     );
 }
 
+template <typename T, layout a_layout, size_t BLOCK_SIZE>
+__global__ void matrix_vector_multiply_row_split_tile_kernel(T* a, T* b, T* c, size_t m, size_t n)
+{
+    __shared__ T tile[BLOCK_SIZE][BLOCK_SIZE + 1]; // avoid bank conflict for b in col_major.
+
+    size_t ld = a_layout == layout::row_major ? n : m;
+    size_t block_offset_y = blockIdx.y * BLOCK_SIZE;
+
+    T sum = 0;
+    for (size_t k = 0; k < n; k += BLOCK_SIZE)
+    {
+        if constexpr (a_layout == layout::row_major)
+        {
+            tile[threadIdx.y][threadIdx.x] = mat(a, ld, block_offset_y + threadIdx.y, k + threadIdx.x);
+        }
+        else
+        {
+            // transpose a tile in shared memory, equivalent to:
+            // tile_b[threadIdx.y][threadIdx.x] = mat(b, ldb, k + threadIdx.x, block_offset_y + threadIdx.y);
+            tile[threadIdx.x][threadIdx.y] = mat(a, ld, k + threadIdx.y, block_offset_y + threadIdx.x);
+        }
+
+        __syncthreads();
+        sum += tile[threadIdx.y][threadIdx.x] * b[k + threadIdx.x];
+        __syncthreads();
+    }
+
+    typedef cub::BlockReduce<T, BLOCK_SIZE> BlockReduce;
+    __shared__ typename BlockReduce::TempStorage temp_storage;
+    T block_sum = BlockReduce(temp_storage).Sum(sum);
+
+    namespace cg = cooperative_groups;
+    cg::thread_block tb = cg::this_thread_block();
+    auto warp = cg::tiled_partition<WARP_SIZE>(tb);
+    T warp_sum = cg::reduce(warp, sum, cg::plus<T>());
+
+    if (threadIdx.x == 0)
+    {
+        c[block_offset_y + threadIdx.y] = warp_sum;
+    }
+}
+
+template <typename T, layout b_layout, size_t BLOCK_SIZE>
+void matrix_vector_multiply_row_split_tile(
+    thrust::device_vector<T>& a,
+    thrust::device_vector<T>& b,
+    thrust::device_vector<T>& c,
+    size_t m, size_t n)
+{
+    check_divisible(m, BLOCK_SIZE, "M must be divisible by BLOCK_SIZE");
+    check_divisible(n, BLOCK_SIZE, "N must be divisible by BLOCK_SIZE");
+
+    dim3 block_range = dim3(BLOCK_SIZE, BLOCK_SIZE);
+    dim3 grid_range = dim3(1, m / BLOCK_SIZE);
+
+    matrix_vector_multiply_row_split_tile_kernel<T, b_layout, BLOCK_SIZE><<<grid_range, block_range>>>(
+        thrust::raw_pointer_cast(a.data()),
+        thrust::raw_pointer_cast(b.data()),
+        thrust::raw_pointer_cast(c.data()),
+        m, n
+    );
+}
+
+
+template <typename T, layout a_layout, size_t BLOCK_SIZE>
+__global__ void matrix_vector_multiply_row_split_block_kernel(T* a, T* b, T* c, size_t m, size_t n)
+{
+    size_t ld = a_layout == layout::row_major ? n : m;
+    size_t i = blockIdx.x;
+    size_t ele_per_block = n / (BLOCK_SIZE / WARP_SIZE);
+    size_t warp_start = (threadIdx.x / WARP_SIZE) * ele_per_block;
+    size_t warp_end = warp_start + ele_per_block;
+    size_t lane_id = threadIdx.x % WARP_SIZE;
+
+    T sum = 0;
+    for (size_t k = warp_start; k < warp_end; k += WARP_SIZE)
+    {
+        if constexpr (a_layout == layout::row_major)
+        {
+            sum += mat(a, ld, i, k + lane_id) * b[k + lane_id];
+        }
+        else
+        {
+            sum += mat(a, ld, k + lane_id, i) * b[k + lane_id];
+        }
+    }
+
+    typedef cub::BlockReduce<T, BLOCK_SIZE> BlockReduce;
+    __shared__ typename BlockReduce::TempStorage temp_storage;
+    T block_sum = BlockReduce(temp_storage).Sum(sum);
+
+    if (threadIdx.x == 0)
+    {
+        c[i] = block_sum;
+    }
+}
+
+template <typename T, layout b_layout, size_t BLOCK_SIZE>
+void matrix_vector_multiply_row_split_block(
+    thrust::device_vector<T>& a,
+    thrust::device_vector<T>& b,
+    thrust::device_vector<T>& c,
+    size_t m, size_t n)
+{
+    check_divisible(n, BLOCK_SIZE, "N must be divisible by BLOCK_SIZE");
+    matrix_vector_multiply_row_split_block_kernel<T, b_layout, BLOCK_SIZE><<<m, BLOCK_SIZE>>>(
+        thrust::raw_pointer_cast(a.data()),
+        thrust::raw_pointer_cast(b.data()),
+        thrust::raw_pointer_cast(c.data()),
+        m, n
+    );
+}
+
 
 template <layout a_layout>
 void test_matrix_multiply()
@@ -126,7 +239,6 @@ void test_matrix_multiply()
 
     using dtype = float;
     using d_vec = thrust::device_vector<dtype>;
-    constexpr size_t block_size = 256;
 
     size_t secs = 10;
     size_t m = 512 * 1024, n = 1024; // 1G FLOPs
@@ -147,8 +259,10 @@ void test_matrix_multiply()
 
     using func_t = std::function<void(d_vec&, d_vec&, d_vec&, size_t, size_t)>;
     std::vector<std::tuple<std::string, func_t>> funcs{
-        {"matrix_vector_multiply_naive", matrix_vector_multiply_naive<dtype, a_layout, block_size>},
-        {"matrix_vector_multiply_row_split_warp", matrix_vector_multiply_row_split_warp<dtype, a_layout, 32>}
+        {"matrix_vector_multiply_naive", matrix_vector_multiply_naive<dtype, a_layout, 256>},
+        {"matrix_vector_multiply_row_split_warp", matrix_vector_multiply_row_split_warp<dtype, a_layout, 32>},
+        {"matrix_vector_multiply_row_split_tile", matrix_vector_multiply_row_split_tile<dtype, a_layout, 32>},
+        {"matrix_vector_multiply_row_split_block", matrix_vector_multiply_row_split_block<dtype, a_layout, 256>},
     };
 
     for (auto [func_name,func] : funcs)
