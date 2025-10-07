@@ -58,7 +58,7 @@ int main() {
     using dtype = float;
     using d_vec = thrust::device_vector<dtype>;
     constexpr uint16_t block_size = 256;
-    constexpr uint16_t thread_size = 32;
+    constexpr uint16_t thread_size = 4;
 
     size_t secs = 10;
     size_t size = 100 * 1024 * 1024; // 100M elements

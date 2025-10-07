@@ -6,6 +6,8 @@
 
 #include "util/vector.hpp"
 
+constexpr size_t WARP_SIZE = 32;
+
 void cuda_check(cudaError_t err) {
     if (err != cudaSuccess) {
         auto message = cudaGetErrorString(err);

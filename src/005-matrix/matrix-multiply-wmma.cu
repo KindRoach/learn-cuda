@@ -77,7 +77,7 @@ void matrix_multiply_wmma(
     check_divisible(n, WN * BLOCK_WRAP_NUM, "N must be divisible by WN * WG_WRAP_NUM");
     check_divisible(k, WK, "K must be divisible by WK");
 
-    dim3 block(BLOCK_WRAP_NUM * 32, BLOCK_WRAP_NUM);
+    dim3 block(BLOCK_WRAP_NUM * WARP_SIZE, BLOCK_WRAP_NUM);
     dim3 grid(n / (BLOCK_WRAP_NUM * WN), m / (BLOCK_WRAP_NUM * WM));
 
     matrix_multiply_wmma_kernel<dtype, acc_type, b_layout, WM, WN, WK><<<grid, block>>>(
