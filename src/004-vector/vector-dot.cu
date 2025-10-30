@@ -1,8 +1,7 @@
 #include <numeric>
-#include <thrust/device_vector.h>
 #include <thrust/inner_product.h>
 
-#include "util/util.cuh"
+#include "cpp-bench-utils/utils.hpp"
 
 template <typename T>
 void vector_dot_ref(const std::vector<T>& a, const std::vector<T>& b, std::vector<T>& out)
@@ -47,8 +46,8 @@ void vector_dot_block_reduce_multi_ele(
     out[0] = 0;
 
     size_t size = a.size();
-    check_divisible(size, BLOCK_SIZE * THREAD_SIZE,
-                    "Global size must be divisible by BLOCK_SIZE * THREAD_SIZE");
+    cbu::check_divisible(size, BLOCK_SIZE * THREAD_SIZE,
+                         "Global size must be divisible by BLOCK_SIZE * THREAD_SIZE");
 
     size_t grid_size = size / (BLOCK_SIZE * THREAD_SIZE);
     thrust::fill(out.begin(), out.end(), T{0});
@@ -61,6 +60,7 @@ void vector_dot_block_reduce_multi_ele(
 
 int main()
 {
+    using namespace cbu;
     using dtype = int;
     using d_vec = thrust::device_vector<dtype>;
     constexpr size_t block_size = 256;
@@ -89,7 +89,7 @@ int main()
     for (auto [func_name, func] : funcs)
     {
         std::cout << "\n" << func_name << ":\n";
-        thrust::fill(d_out.begin(), d_out.end(), dtype{0});
+        fill(d_out.begin(), d_out.end(), dtype{0});
         benchmark_func_by_time(secs, [&]()
         {
             func(d_a, d_b, d_out);

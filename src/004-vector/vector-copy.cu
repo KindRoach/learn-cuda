@@ -1,4 +1,4 @@
-#include "util/util.cuh"
+#include "cpp-bench-utils/utils.hpp"
 
 template<typename T>
 __global__ void vector_copy_naive_kernel(T *src, T *dst) {
@@ -12,7 +12,7 @@ void vector_copy_naive(
     thrust::device_vector<T> &out
 ) {
     size_t size = src.size();
-    check_divisible(size, BLOCK_SIZE, "Global size must be divisible by BLOCK_SIZE");
+    cbu::check_divisible(size, BLOCK_SIZE, "Global size must be divisible by BLOCK_SIZE");
     size_t blocksPerGrid = size / BLOCK_SIZE;
     vector_copy_naive_kernel<T><<<blocksPerGrid, BLOCK_SIZE>>>(
         thrust::raw_pointer_cast(src.data()),
@@ -27,7 +27,7 @@ void vector_copy_naive_vec(
 ) {
     size_t size = src.size();
     size_t vec_size = sizeof(vec_t) / sizeof(T);
-    check_divisible(size, BLOCK_SIZE * vec_size, "Global size must be divisible by BLOCK_SIZE * vec_size");
+    cbu::check_divisible(size, BLOCK_SIZE * vec_size, "Global size must be divisible by BLOCK_SIZE * vec_size");
     size_t blocksPerGrid = size / (BLOCK_SIZE * vec_size);
     vector_copy_naive_kernel<vec_t><<<blocksPerGrid, BLOCK_SIZE>>>(
         reinterpret_cast<vec_t *>(thrust::raw_pointer_cast(src.data())),
@@ -46,7 +46,7 @@ __global__ void vector_copy_multi_ele_kernel(T *src, T *dst) {
 template<typename T, size_t BLOCK_SIZE, size_t THREAD_SIZE>
 void vector_copy_multi_ele(thrust::device_vector<T> &src, thrust::device_vector<T> &out) {
     size_t size = src.size();
-    check_divisible(size, BLOCK_SIZE * THREAD_SIZE, "Global size must be divisible by BLOCK_SIZE * THREAD_SIZE");
+    cbu::check_divisible(size, BLOCK_SIZE * THREAD_SIZE, "Global size must be divisible by BLOCK_SIZE * THREAD_SIZE");
     size_t blocksPerGrid = size / (BLOCK_SIZE * THREAD_SIZE);
     vector_copy_multi_ele_kernel<T, BLOCK_SIZE, THREAD_SIZE><<<blocksPerGrid, BLOCK_SIZE>>>(
         thrust::raw_pointer_cast(src.data()),
@@ -65,7 +65,7 @@ __global__ void vector_copy_multi_ele_misaligned_kernel(T *src, T *dst) {
 template<typename T, size_t BLOCK_SIZE, size_t THREAD_SIZE>
 void vector_copy_multi_ele_misaligned(thrust::device_vector<T> &src, thrust::device_vector<T> &out) {
     size_t size = src.size();
-    check_divisible(size, BLOCK_SIZE * THREAD_SIZE, "Global size must be divisible by BLOCK_SIZE * THREAD_SIZE");
+    cbu::check_divisible(size, BLOCK_SIZE * THREAD_SIZE, "Global size must be divisible by BLOCK_SIZE * THREAD_SIZE");
     size_t blocksPerGrid = size / (BLOCK_SIZE * THREAD_SIZE);
     vector_copy_multi_ele_misaligned_kernel<T, BLOCK_SIZE, THREAD_SIZE><<<blocksPerGrid, BLOCK_SIZE>>>(
         thrust::raw_pointer_cast(src.data()),
@@ -75,6 +75,7 @@ void vector_copy_multi_ele_misaligned(thrust::device_vector<T> &src, thrust::dev
 
 
 int main() {
+    using namespace cbu;
     using dtype = float;
     using d_vec = thrust::device_vector<dtype>;
     constexpr uint16_t block_size = 256;
@@ -99,7 +100,7 @@ int main() {
 
     for (auto [func_name,func]: funcs) {
         std::cout << "\n" << func_name << ":\n";
-        thrust::fill(d_dst.begin(), d_dst.end(), 0);
+        fill(d_dst.begin(), d_dst.end(), 0);
         benchmark_func_by_time(secs, [&]() {
             func(d_src, d_dst);
             cuda_check(cudaDeviceSynchronize());

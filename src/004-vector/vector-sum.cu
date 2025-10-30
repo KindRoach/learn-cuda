@@ -1,6 +1,6 @@
 #include <numeric>
 
-#include "util/util.cuh"
+#include "cpp-bench-utils/utils.hpp"
 
 template <typename T>
 void vector_sum_ref(const std::vector<T>& vec, std::vector<T>& out)
@@ -27,7 +27,7 @@ void vector_sum_atomic(thrust::device_vector<T>& vec, thrust::device_vector<T>& 
     out[0] = 0;
 
     size_t size = vec.size();
-    check_divisible(size, BLOCK_SIZE, "Global size must be divisible by BLOCK_SIZE");
+    cbu::check_divisible(size, BLOCK_SIZE, "Global size must be divisible by BLOCK_SIZE");
 
     size_t grid_size = size / BLOCK_SIZE;
     thrust::fill(out.begin(), out.end(), T{0});
@@ -83,7 +83,7 @@ void vector_sum_block_reduce(thrust::device_vector<T>& vec, thrust::device_vecto
     out[0] = 0;
 
     size_t size = vec.size();
-    check_divisible(size, BLOCK_SIZE, "Global size must be divisible by BLOCK_SIZE");
+    cbu::check_divisible(size, BLOCK_SIZE, "Global size must be divisible by BLOCK_SIZE");
 
     size_t grid_size = size / BLOCK_SIZE;
     thrust::fill(out.begin(), out.end(), T{0});
@@ -162,7 +162,7 @@ void vector_sum_block_reduce_multi_ele(thrust::device_vector<T>& vec, thrust::de
     out[0] = 0;
 
     size_t size = vec.size();
-    check_divisible(size, BLOCK_SIZE * THREAD_SIZE,
+    cbu::check_divisible(size, BLOCK_SIZE * THREAD_SIZE,
                     "Global size must be divisible by BLOCK_SIZE * THREAD_SIZE");
 
     size_t grid_size = size / (BLOCK_SIZE * THREAD_SIZE);
@@ -193,10 +193,10 @@ int main()
     size_t size = 100 * 1024 * 1024; // 100M elements
 
     std::vector<dtype> vec(size), out_ref(1);
-    random_fill(vec);
+    cbu::random_fill(vec);
 
     std::cout << "vector_sum_ref:\n";
-    benchmark_func_by_time(secs, [&] { vector_sum_ref(vec, out_ref); });
+    cbu::benchmark_func_by_time(secs, [&] { vector_sum_ref(vec, out_ref); });
 
     thrust::device_vector<dtype> d_vec = vec;
     thrust::device_vector<dtype> d_out(1);
@@ -221,12 +221,12 @@ int main()
     {
         std::cout << "\n" << func_name << ":\n";
         thrust::fill(d_out.begin(), d_out.end(), dtype{0});
-        benchmark_func_by_time(secs, [&]()
+        cbu::benchmark_func_by_time(secs, [&]()
         {
             func(d_vec, d_out);
-            cuda_check(cudaDeviceSynchronize());
+            cbu::cuda_check(cudaDeviceSynchronize());
         });
 
-        cuda_acc_check(out_ref, d_out);
+        cbu::cuda_acc_check(out_ref, d_out);
     }
 }

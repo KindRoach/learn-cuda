@@ -1,10 +1,11 @@
-#include "util/util.cuh"
+#include "cpp-bench-utils/utils.hpp"
 
 void naive_copy(void *src, void *dst, size_t bytes) {
     cudaMemcpy(dst, src, bytes, cudaMemcpyHostToDevice);
 }
 
 int main() {
+    using namespace cbu;
     using dtype = float;
 
     size_t secs = 10;
@@ -28,9 +29,9 @@ int main() {
 
     for (auto [memory_name,src_ptr]: funcs) {
         std::cout << "\n" << memory_name << ":\n";
-        thrust::fill(d_vec.begin(), d_vec.end(), 0);
+        fill(d_vec.begin(), d_vec.end(), 0);
         benchmark_func_by_time(secs, [&]() {
-            naive_copy(src_ptr, thrust::raw_pointer_cast(d_vec.data()), bytes);
+            naive_copy(src_ptr, raw_pointer_cast(d_vec.data()), bytes);
         });
         cuda_acc_check(h_vec, d_vec);
     }

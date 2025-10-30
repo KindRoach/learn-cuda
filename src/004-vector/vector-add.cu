@@ -1,4 +1,4 @@
-#include "util/util.cuh"
+#include "cpp-bench-utils/utils.hpp"
 
 template<typename T>
 void vector_add_ref(std::vector<T> &a, std::vector<T> &b, std::vector<T> &c) {
@@ -20,7 +20,7 @@ void vector_add_naive(
     thrust::device_vector<T> &c
 ) {
     size_t size = a.size();
-    check_divisible(size, BLOCK_SIZE, "Global size must be divisible by BLOCK_SIZE");
+    cbu::check_divisible(size, BLOCK_SIZE, "Global size must be divisible by BLOCK_SIZE");
     size_t blocksPerGrid = size / BLOCK_SIZE;
     vector_add_naive_kernel<T><<<blocksPerGrid, BLOCK_SIZE>>>(
         thrust::raw_pointer_cast(a.data()),
@@ -45,7 +45,7 @@ void vector_add_multi_ele(
     thrust::device_vector<T> &c
 ) {
     size_t size = a.size();
-    check_divisible(size, BLOCK_SIZE * THREAD_SIZE, "Global size must be divisible by BLOCK_SIZE * THREAD_SIZE");
+    cbu::check_divisible(size, BLOCK_SIZE * THREAD_SIZE, "Global size must be divisible by BLOCK_SIZE * THREAD_SIZE");
     size_t blocksPerGrid = size / (BLOCK_SIZE * THREAD_SIZE);
     vector_add_multi_ele_kernel<T, BLOCK_SIZE, THREAD_SIZE><<<blocksPerGrid, BLOCK_SIZE>>>(
         thrust::raw_pointer_cast(a.data()),
@@ -55,6 +55,7 @@ void vector_add_multi_ele(
 }
 
 int main() {
+    using namespace cbu;
     using dtype = float;
     using d_vec = thrust::device_vector<dtype>;
     constexpr uint16_t block_size = 256;
@@ -85,7 +86,7 @@ int main() {
 
     for (auto [func_name, func]: funcs) {
         std::cout << "\n" << func_name << ":\n";
-        thrust::fill(d_c.begin(), d_c.end(), 0);
+        fill(d_c.begin(), d_c.end(), 0);
         benchmark_func_by_time(secs, [&]() {
             func(d_a, d_b, d_c);
             cuda_check(cudaDeviceSynchronize());

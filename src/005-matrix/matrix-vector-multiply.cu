@@ -1,22 +1,23 @@
 #include <cooperative_groups.h>
 #include <cooperative_groups/reduce.h>
 
-#include "util/util.cuh"
+#include "cpp-bench-utils/utils.hpp"
 
 // A matrix: [m, n] in row-major or col-major
 // b vector: [n]
 // o = A x b^T vector : [m]
 
-template <typename T, layout a_layout>
+template <typename T, cbu::matrix_layout a_layout>
 void matrix_vector_multiply_ref(std::vector<T>& a, std::vector<T>& b, std::vector<T>& c, size_t m, size_t n)
 {
-    size_t ld = a_layout == layout::row_major ? n : m;
+    using namespace cbu;
+    size_t ld = a_layout == matrix_layout::row_major ? n : m;
     for (size_t i = 0; i < m; i++)
     {
         T sum = 0;
         for (size_t k = 0; k < n; k++)
         {
-            if constexpr (a_layout == layout::row_major)
+            if constexpr (a_layout == matrix_layout::row_major)
             {
                 sum += mat(a.data(), ld, i, k) * b[k];
             }
@@ -29,16 +30,17 @@ void matrix_vector_multiply_ref(std::vector<T>& a, std::vector<T>& b, std::vecto
     }
 }
 
-template <typename T, layout a_layout>
+template <typename T, cbu::matrix_layout a_layout>
 __global__ void matrix_vector_multiply_naive_kernel(T* a, T* b, T* c, size_t m, size_t n)
 {
-    size_t ld = a_layout == layout::row_major ? n : m;
+    using namespace cbu;
+    size_t ld = a_layout == matrix_layout::row_major ? n : m;
     size_t i = blockIdx.x * blockDim.x + threadIdx.x;
 
     T sum = 0;
     for (size_t k = 0; k < n; k++)
     {
-        if constexpr (a_layout == layout::row_major)
+        if constexpr (a_layout == matrix_layout::row_major)
         {
             sum += mat(a, ld, i, k) * b[k];
         }
@@ -50,14 +52,14 @@ __global__ void matrix_vector_multiply_naive_kernel(T* a, T* b, T* c, size_t m, 
     c[i] = sum;
 }
 
-template <typename T, layout b_layout, size_t BLOCK_SIZE>
+template <typename T, cbu::matrix_layout b_layout, size_t BLOCK_SIZE>
 void matrix_vector_multiply_naive(
     thrust::device_vector<T>& a,
     thrust::device_vector<T>& b,
     thrust::device_vector<T>& c,
     size_t m, size_t n)
 {
-    check_divisible(m, BLOCK_SIZE, "M must be divisible by BLOCK_SIZE");
+    cbu::check_divisible(m, BLOCK_SIZE, "M must be divisible by BLOCK_SIZE");
     matrix_vector_multiply_naive_kernel<T, b_layout><<<m / BLOCK_SIZE, BLOCK_SIZE>>>(
         thrust::raw_pointer_cast(a.data()),
         thrust::raw_pointer_cast(b.data()),
@@ -66,16 +68,17 @@ void matrix_vector_multiply_naive(
     );
 }
 
-template <typename T, layout a_layout>
+template <typename T, cbu::matrix_layout a_layout>
 __global__ void matrix_vector_multiply_row_split_warp_kernel(T* a, T* b, T* c, size_t m, size_t n)
 {
-    size_t ld = a_layout == layout::row_major ? n : m;
+    using namespace cbu;
+    size_t ld = a_layout == matrix_layout::row_major ? n : m;
     size_t i = blockIdx.y * blockDim.y + threadIdx.y;
 
     T sum = 0;
     for (size_t k = 0; k < n; k += WARP_SIZE)
     {
-        if constexpr (a_layout == layout::row_major)
+        if constexpr (a_layout == matrix_layout::row_major)
         {
             sum += mat(a, ld, i, k + threadIdx.x) * b[k + threadIdx.x];
         }
@@ -96,13 +99,14 @@ __global__ void matrix_vector_multiply_row_split_warp_kernel(T* a, T* b, T* c, s
     }
 }
 
-template <typename T, layout b_layout, size_t BLOCK_WARP_NUM>
+template <typename T, cbu::matrix_layout b_layout, size_t BLOCK_WARP_NUM>
 void matrix_vector_multiply_row_split_warp(
     thrust::device_vector<T>& a,
     thrust::device_vector<T>& b,
     thrust::device_vector<T>& c,
     size_t m, size_t n)
 {
+    using namespace cbu;
     check_divisible(m, BLOCK_WARP_NUM, "M must be divisible by BLOCK_WARP_NUM");
     check_divisible(n, WARP_SIZE, "N must be divisible by WARP_SIZE");
 
@@ -117,18 +121,19 @@ void matrix_vector_multiply_row_split_warp(
     );
 }
 
-template <typename T, layout a_layout, size_t BLOCK_SIZE>
+template <typename T, cbu::matrix_layout a_layout, size_t BLOCK_SIZE>
 __global__ void matrix_vector_multiply_row_split_tile_kernel(T* a, T* b, T* c, size_t m, size_t n)
 {
+    using namespace cbu;
     __shared__ T tile[BLOCK_SIZE][BLOCK_SIZE + 1]; // avoid bank conflict for b in col_major.
 
-    size_t ld = a_layout == layout::row_major ? n : m;
+    size_t ld = a_layout == matrix_layout::row_major ? n : m;
     size_t block_offset_y = blockIdx.y * BLOCK_SIZE;
 
     T sum = 0;
     for (size_t k = 0; k < n; k += BLOCK_SIZE)
     {
-        if constexpr (a_layout == layout::row_major)
+        if constexpr (a_layout == matrix_layout::row_major)
         {
             tile[threadIdx.y][threadIdx.x] = mat(a, ld, block_offset_y + threadIdx.y, k + threadIdx.x);
         }
@@ -159,15 +164,15 @@ __global__ void matrix_vector_multiply_row_split_tile_kernel(T* a, T* b, T* c, s
     }
 }
 
-template <typename T, layout b_layout, size_t BLOCK_SIZE>
+template <typename T, cbu::matrix_layout b_layout, size_t BLOCK_SIZE>
 void matrix_vector_multiply_row_split_tile(
     thrust::device_vector<T>& a,
     thrust::device_vector<T>& b,
     thrust::device_vector<T>& c,
     size_t m, size_t n)
 {
-    check_divisible(m, BLOCK_SIZE, "M must be divisible by BLOCK_SIZE");
-    check_divisible(n, BLOCK_SIZE, "N must be divisible by BLOCK_SIZE");
+    cbu::check_divisible(m, BLOCK_SIZE, "M must be divisible by BLOCK_SIZE");
+    cbu::check_divisible(n, BLOCK_SIZE, "N must be divisible by BLOCK_SIZE");
 
     dim3 block_range = dim3(BLOCK_SIZE, BLOCK_SIZE);
     dim3 grid_range = dim3(1, m / BLOCK_SIZE);
@@ -181,10 +186,11 @@ void matrix_vector_multiply_row_split_tile(
 }
 
 
-template <typename T, layout a_layout, size_t BLOCK_SIZE>
+template <typename T, cbu::matrix_layout a_layout, size_t BLOCK_SIZE>
 __global__ void matrix_vector_multiply_row_split_block_kernel(T* a, T* b, T* c, size_t m, size_t n)
 {
-    size_t ld = a_layout == layout::row_major ? n : m;
+    using namespace cbu;
+    size_t ld = a_layout == matrix_layout::row_major ? n : m;
     size_t i = blockIdx.x;
     size_t ele_per_block = n / (BLOCK_SIZE / WARP_SIZE);
     size_t warp_start = (threadIdx.x / WARP_SIZE) * ele_per_block;
@@ -194,7 +200,7 @@ __global__ void matrix_vector_multiply_row_split_block_kernel(T* a, T* b, T* c, 
     T sum = 0;
     for (size_t k = warp_start; k < warp_end; k += WARP_SIZE)
     {
-        if constexpr (a_layout == layout::row_major)
+        if constexpr (a_layout == matrix_layout::row_major)
         {
             sum += mat(a, ld, i, k + lane_id) * b[k + lane_id];
         }
@@ -214,14 +220,14 @@ __global__ void matrix_vector_multiply_row_split_block_kernel(T* a, T* b, T* c, 
     }
 }
 
-template <typename T, layout b_layout, size_t BLOCK_SIZE>
+template <typename T, cbu::matrix_layout b_layout, size_t BLOCK_SIZE>
 void matrix_vector_multiply_row_split_block(
     thrust::device_vector<T>& a,
     thrust::device_vector<T>& b,
     thrust::device_vector<T>& c,
     size_t m, size_t n)
 {
-    check_divisible(n, BLOCK_SIZE, "N must be divisible by BLOCK_SIZE");
+    cbu::check_divisible(n, BLOCK_SIZE, "N must be divisible by BLOCK_SIZE");
     matrix_vector_multiply_row_split_block_kernel<T, b_layout, BLOCK_SIZE><<<m, BLOCK_SIZE>>>(
         thrust::raw_pointer_cast(a.data()),
         thrust::raw_pointer_cast(b.data()),
@@ -231,10 +237,11 @@ void matrix_vector_multiply_row_split_block(
 }
 
 
-template <layout a_layout>
+template <cbu::matrix_layout a_layout>
 void test_matrix_multiply()
 {
-    std::string a_major = a_layout == layout::row_major ? "row major" : "col major";
+    using namespace cbu;
+    std::string a_major = a_layout == matrix_layout::row_major ? "row major" : "col major";
     std::cout << "-------------- matrix a in " << a_major << " --------------\n";
 
     using dtype = float;
@@ -281,6 +288,6 @@ void test_matrix_multiply()
 
 int main()
 {
-    test_matrix_multiply<layout::row_major>();
-    test_matrix_multiply<layout::col_major>();
+    test_matrix_multiply<cbu::matrix_layout::row_major>();
+    test_matrix_multiply<cbu::matrix_layout::col_major>();
 }

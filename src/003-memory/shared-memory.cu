@@ -1,4 +1,4 @@
-#include "util/util.cuh"
+#include "cpp-bench-utils/utils.hpp"
 
 template<typename T, size_t BLOCK_SIZE>
 __global__ void test_shared_memory_kernel() {
@@ -20,5 +20,5 @@ __global__ void test_shared_memory_kernel() {
 int main() {
     constexpr size_t block_size = 4;
     test_shared_memory_kernel<float, block_size><<<2, block_size>>>();
-    cuda_check(cudaDeviceSynchronize());
+    cbu::cuda_check(cudaDeviceSynchronize());
 }

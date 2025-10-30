@@ -1,4 +1,4 @@
-#include "util/util.cuh"
+#include "cpp-bench-utils/utils.hpp"
 
 template<typename T>
 __global__ void write_kernel(T *device_ptr) {
@@ -47,11 +47,12 @@ void test_mem(T *ptr, size_t size) {
 
     write_kernel<<<1, size>>>(ptr);
     read_kernel<<<1, size>>>(ptr);
-    cuda_check(cudaDeviceSynchronize());
+    cbu::cuda_check(cudaDeviceSynchronize());
     std::cout << "\n";
 }
 
 int main() {
+    using namespace cbu;
     using dtype = float;
     size_t size = 16;
     size_t nBytes = size * sizeof(dtype);

@@ -1,4 +1,4 @@
-#include "util/util.cuh"
+#include "cpp-bench-utils/utils.hpp"
 
 // In  : [m,n] in row-major
 // Out : [n,m] in row-major
@@ -11,7 +11,7 @@ void matrix_transpose_ref(std::vector<T>& in, std::vector<T>& out, size_t m, siz
     {
         for (size_t j = 0; j < n; ++j)
         {
-            mat(out.data(), ld_out, j, i) = mat(in.data(), ld_in, i, j);
+            cbu::mat(out.data(), ld_out, j, i) = cbu::mat(in.data(), ld_in, i, j);
         }
     }
 }
@@ -22,7 +22,7 @@ __global__ void matrix_transpose_naive_read_continue_kernel(T* in, T* out, size_
     size_t ldin = n, ldout = m;
     size_t x = blockIdx.x * blockDim.x + threadIdx.x;
     size_t y = blockIdx.y * blockDim.y + threadIdx.y;
-    mat(out, ldout, x, y) = mat(in, ldin, y, x);
+    cbu::mat(out, ldout, x, y) = cbu::mat(in, ldin, y, x);
 }
 
 template <typename T, size_t BLOCK_SIZE>
@@ -31,8 +31,8 @@ void matrix_transpose_naive_read_continue(
     thrust::device_vector<T>& out,
     size_t m, size_t n)
 {
-    check_divisible(m, BLOCK_SIZE, "M must be divisible by BLOCK_SIZE");
-    check_divisible(n, BLOCK_SIZE, "N must be divisible by BLOCK_SIZE");
+    cbu::check_divisible(m, BLOCK_SIZE, "M must be divisible by BLOCK_SIZE");
+    cbu::check_divisible(n, BLOCK_SIZE, "N must be divisible by BLOCK_SIZE");
     dim3 grid_range = dim3(n / BLOCK_SIZE, m / BLOCK_SIZE);
     dim3 block_range = dim3(BLOCK_SIZE, BLOCK_SIZE);
     matrix_transpose_naive_read_continue_kernel<T><<<grid_range, block_range>>>(
@@ -48,7 +48,7 @@ __global__ void matrix_transpose_naive_write_continue_kernel(T* in, T* out, size
     size_t ldin = n, ldout = m;
     size_t x = blockIdx.x * blockDim.x + threadIdx.x;
     size_t y = blockIdx.y * blockDim.y + threadIdx.y;
-    mat(out, ldout, y, x) = mat(in, ldin, x, y);
+    cbu::mat(out, ldout, y, x) = cbu::mat(in, ldin, x, y);
 }
 
 template <typename T, size_t BLOCK_SIZE>
@@ -57,8 +57,8 @@ void matrix_transpose_naive_write_continue(
     thrust::device_vector<T>& out,
     size_t m, size_t n)
 {
-    check_divisible(m, BLOCK_SIZE, "M must be divisible by BLOCK_SIZE");
-    check_divisible(n, BLOCK_SIZE, "N must be divisible by BLOCK_SIZE");
+    cbu::check_divisible(m, BLOCK_SIZE, "M must be divisible by BLOCK_SIZE");
+    cbu::check_divisible(n, BLOCK_SIZE, "N must be divisible by BLOCK_SIZE");
     dim3 grid_range = dim3(m / BLOCK_SIZE, n / BLOCK_SIZE);
     dim3 block_range = dim3(BLOCK_SIZE, BLOCK_SIZE);
     matrix_transpose_naive_write_continue_kernel<T><<<grid_range, block_range>>>(
@@ -76,14 +76,14 @@ __global__ void matrix_transpose_diagonal_mapping_kernel(T* in, T* out, size_t m
     size_t ldin = n, ldout = m;
     size_t x = blockIdx.x * BLOCK_SIZE + threadIdx.x;
     size_t y = blockIdx.y * BLOCK_SIZE + threadIdx.y;
-    tile[threadIdx.y][threadIdx.x] = mat(in, ldin, y, x);
+    tile[threadIdx.y][threadIdx.x] = cbu::mat(in, ldin, y, x);
 
     __syncthreads();
 
     // Diagonal block mapping
     x = blockIdx.y * BLOCK_SIZE + threadIdx.x;
     y = blockIdx.x * BLOCK_SIZE + threadIdx.y;
-    mat(out, ldout, y, x) = tile[threadIdx.x][threadIdx.y];
+    cbu::mat(out, ldout, y, x) = tile[threadIdx.x][threadIdx.y];
 }
 
 template <typename T, size_t BLOCK_SIZE>
@@ -92,8 +92,8 @@ void matrix_transpose_diagonal_mapping(
     thrust::device_vector<T>& out,
     size_t m, size_t n)
 {
-    check_divisible(m, BLOCK_SIZE, "M must be divisible by BLOCK_SIZE");
-    check_divisible(n, BLOCK_SIZE, "N must be divisible by BLOCK_SIZE");
+    cbu::check_divisible(m, BLOCK_SIZE, "M must be divisible by BLOCK_SIZE");
+    cbu::check_divisible(n, BLOCK_SIZE, "N must be divisible by BLOCK_SIZE");
     dim3 grid_range = dim3(n / BLOCK_SIZE, m / BLOCK_SIZE);
     dim3 block_range = dim3(BLOCK_SIZE, BLOCK_SIZE);
     matrix_transpose_diagonal_mapping_kernel<T, BLOCK_SIZE><<<grid_range, block_range>>>(
@@ -105,6 +105,7 @@ void matrix_transpose_diagonal_mapping(
 
 int main()
 {
+    using namespace cbu;
     using dtype = float;
     using d_vec = thrust::device_vector<dtype>;
     constexpr size_t block_size = 32;
@@ -141,7 +142,7 @@ int main()
     for (auto [func_name,func] : funcs)
     {
         std::cout << "\n" << func_name << ":\n";
-        thrust::fill(d_dst.begin(), d_dst.end(), 0);
+        fill(d_dst.begin(), d_dst.end(), 0);
         benchmark_func_by_time(secs, [&]()
         {
             func(d_src, d_dst, m, n);

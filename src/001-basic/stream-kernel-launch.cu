@@ -1,4 +1,4 @@
-#include "util/util.cuh"
+#include "cpp-bench-utils/utils.hpp"
 
 __global__ void hello_from_kernel(size_t kernel_id) {
     printf(
@@ -8,6 +8,7 @@ __global__ void hello_from_kernel(size_t kernel_id) {
 }
 
 void single_stream(size_t n_kernel) {
+    using namespace cbu;
     std::cout << "Run with single stream:\n";
 
     cudaStream_t stream;
@@ -24,6 +25,7 @@ void single_stream(size_t n_kernel) {
 }
 
 void multi_stream(size_t n_kernel) {
+    using namespace cbu;
     std::cout << "Run with multi stream:\n";
 
     std::vector<cudaStream_t> streams(n_kernel);

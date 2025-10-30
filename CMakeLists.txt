@@ -25,7 +25,10 @@ foreach (file_path ${sources})
     add_executable("${target_name}" "${file_path}")
 
     # Include the src directory for headers
-    target_include_directories("${target_name}" PRIVATE "${src_root}")
+    target_include_directories("${target_name}" PRIVATE
+            "${src_root}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/cpp-bench-utils/include"
+    )
 
     # Set CUDA architectures
     set_property(TARGET ${target_name} PROPERTY CUDA_ARCHITECTURES native)

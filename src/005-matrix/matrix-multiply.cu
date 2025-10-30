@@ -1,17 +1,18 @@
-#include "util/util.cuh"
+#include "cpp-bench-utils/utils.hpp"
 
 // A : [m,k] in row-major
 // B : [k,n] in row-major or col-major
 // C = A x B : [m,n] in row-major
 
-template <typename T, layout b_layout>
+template <typename T, cbu::matrix_layout b_layout>
 void matrix_multiply_ref(
     std::vector<T>& a,
     std::vector<T>& b,
     std::vector<T>& c,
     size_t m, size_t n, size_t k)
 {
-    size_t lda = k, ldb = b_layout == layout::row_major ? n : k, ldc = n;
+    using namespace cbu;
+    size_t lda = k, ldb = b_layout == matrix_layout::row_major ? n : k, ldc = n;
     for (size_t i = 0; i < m; i++)
     {
         for (size_t j = 0; j < n; j++)
@@ -19,7 +20,7 @@ void matrix_multiply_ref(
             T sum = 0;
             for (size_t p = 0; p < k; p++)
             {
-                if constexpr (b_layout == layout::row_major)
+                if constexpr (b_layout == matrix_layout::row_major)
                 {
                     sum += mat(a.data(), lda, i, p) * mat(b.data(), ldb, p, j);
                 }
@@ -33,17 +34,18 @@ void matrix_multiply_ref(
     }
 }
 
-template <typename T, layout b_layout>
+template <typename T, cbu::matrix_layout b_layout>
 __global__ void matrix_multiply_naive_kernel(T* a, T* b, T* c, size_t m, size_t n, size_t k)
 {
-    size_t lda = k, ldb = b_layout == layout::row_major ? n : k, ldc = n;
+    using namespace cbu;
+    size_t lda = k, ldb = b_layout == matrix_layout::row_major ? n : k, ldc = n;
     size_t x = blockIdx.x * blockDim.x + threadIdx.x;
     size_t y = blockIdx.y * blockDim.y + threadIdx.y;
 
     T sum = 0;
     for (size_t i = 0; i < k; i++)
     {
-        if constexpr (b_layout == layout::row_major)
+        if constexpr (b_layout == matrix_layout::row_major)
         {
             sum += mat(a, lda, y, i) * mat(b, ldb, i, x);
         }
@@ -52,18 +54,18 @@ __global__ void matrix_multiply_naive_kernel(T* a, T* b, T* c, size_t m, size_t 
             sum += mat(a, lda, y, i) * mat(b, ldb, x, i);
         }
     }
-    mat(c, ldc, y, x) = sum;
+    cbu::mat(c, ldc, y, x) = sum;
 }
 
-template <typename T, layout b_layout, size_t BLOCK_SIZE>
+template <typename T, cbu::matrix_layout b_layout, size_t BLOCK_SIZE>
 void matrix_multiply_naive(
     thrust::device_vector<T>& a,
     thrust::device_vector<T>& b,
     thrust::device_vector<T>& c,
     size_t m, size_t n, size_t k)
 {
-    check_divisible(m, BLOCK_SIZE, "M must be divisible by BLOCK_SIZE");
-    check_divisible(n, BLOCK_SIZE, "N must be divisible by BLOCK_SIZE");
+    cbu::check_divisible(m, BLOCK_SIZE, "M must be divisible by BLOCK_SIZE");
+    cbu::check_divisible(n, BLOCK_SIZE, "N must be divisible by BLOCK_SIZE");
     dim3 grid_range = dim3(n / BLOCK_SIZE, m / BLOCK_SIZE);
     dim3 block_range = dim3(BLOCK_SIZE, BLOCK_SIZE);
     matrix_multiply_naive_kernel<T, b_layout><<<grid_range, block_range>>>(
@@ -74,13 +76,14 @@ void matrix_multiply_naive(
     );
 }
 
-template <typename T, layout b_layout, size_t BLOCK_SIZE>
+template <typename T, cbu::matrix_layout b_layout, size_t BLOCK_SIZE>
 __global__ void matrix_multiply_tile_kernel(T* a, T* b, T* c, size_t m, size_t n, size_t k)
 {
+    using namespace cbu;
     __shared__ T tile_a[BLOCK_SIZE][BLOCK_SIZE];
     __shared__ T tile_b[BLOCK_SIZE][BLOCK_SIZE + 1]; // avoid bank conflict for b in col_major.
 
-    size_t lda = k, ldb = b_layout == layout::row_major ? n : k, ldc = n;
+    size_t lda = k, ldb = b_layout == matrix_layout::row_major ? n : k, ldc = n;
     size_t x = blockIdx.x * blockDim.x + threadIdx.x;
     size_t y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -91,7 +94,7 @@ __global__ void matrix_multiply_tile_kernel(T* a, T* b, T* c, size_t m, size_t n
         tile_a[threadIdx.y][threadIdx.x] = mat(a, lda, y, k_i + threadIdx.x);
 
         // load B tile
-        if constexpr (b_layout == layout::row_major)
+        if constexpr (b_layout == matrix_layout::row_major)
         {
             tile_b[threadIdx.y][threadIdx.x] = mat(b, ldb, k_i + threadIdx.y, x);
         }
@@ -114,15 +117,15 @@ __global__ void matrix_multiply_tile_kernel(T* a, T* b, T* c, size_t m, size_t n
     mat(c, ldc, y, x) = sum;
 }
 
-template <typename T, layout b_layout, size_t BLOCK_SIZE>
+template <typename T, cbu::matrix_layout b_layout, size_t BLOCK_SIZE>
 void matrix_multiply_tile(
     thrust::device_vector<T>& a,
     thrust::device_vector<T>& b,
     thrust::device_vector<T>& c,
     size_t m, size_t n, size_t k)
 {
-    check_divisible(m, BLOCK_SIZE, "M must be divisible by BLOCK_SIZE");
-    check_divisible(n, BLOCK_SIZE, "N must be divisible by BLOCK_SIZE");
+    cbu::check_divisible(m, BLOCK_SIZE, "M must be divisible by BLOCK_SIZE");
+    cbu::check_divisible(n, BLOCK_SIZE, "N must be divisible by BLOCK_SIZE");
     dim3 grid_range = dim3(n / BLOCK_SIZE, m / BLOCK_SIZE);
     dim3 block_range = dim3(BLOCK_SIZE, BLOCK_SIZE);
     matrix_multiply_tile_kernel<T, b_layout, BLOCK_SIZE><<<grid_range, block_range>>>(
@@ -133,10 +136,11 @@ void matrix_multiply_tile(
     );
 }
 
-template <layout b_layout>
+template <cbu::matrix_layout b_layout>
 void test_matrix_multiply()
 {
-    std::string b_major = b_layout == layout::row_major ? "row major" : "col major";
+    using namespace cbu;
+    std::string b_major = b_layout == matrix_layout::row_major ? "row major" : "col major";
     std::cout << "-------------- matrix b in " << b_major << " --------------\n";
 
     using dtype = float;
@@ -169,7 +173,7 @@ void test_matrix_multiply()
     for (auto [func_name,func] : funcs)
     {
         std::cout << "\n" << func_name << ":\n";
-        thrust::fill(d_c.begin(), d_c.end(), 0);
+        fill(d_c.begin(), d_c.end(), 0);
         benchmark_func_by_time(secs, [&]()
         {
             func(d_a, d_b, d_c, m, n, k);
@@ -181,6 +185,6 @@ void test_matrix_multiply()
 
 int main()
 {
-    test_matrix_multiply<layout::row_major>();
-    test_matrix_multiply<layout::col_major>();
+    test_matrix_multiply<cbu::matrix_layout::row_major>();
+    test_matrix_multiply<cbu::matrix_layout::col_major>();
 }

@@ -1,4 +1,4 @@
-#include "util/util.cuh"
+#include "cpp-bench-utils/utils.hpp"
 
 template<typename T>
 __global__ void copy_data(T *src, T *dst) {
@@ -15,7 +15,7 @@ __global__ void add_one(T *data) {
 template<typename T, size_t BLOCK_SIZE>
 void without_graph(thrust::device_vector<T> &data, thrust::device_vector<T> &out, size_t n_kernel) {
     size_t size = data.size();
-    check_divisible(size, BLOCK_SIZE, "Global size must be divisible by BLOCK_SIZE");
+    cbu::check_divisible(size, BLOCK_SIZE, "Global size must be divisible by BLOCK_SIZE");
     size_t grid_size = size / BLOCK_SIZE;
 
     copy_data<<<grid_size, BLOCK_SIZE>>>(
@@ -31,7 +31,7 @@ void without_graph(thrust::device_vector<T> &data, thrust::device_vector<T> &out
 template<typename T, size_t BLOCK_SIZE>
 void with_graph(thrust::device_vector<T> &data, thrust::device_vector<T> &out, size_t n_kernel) {
     size_t size = data.size();
-    check_divisible(size, BLOCK_SIZE, "Global size must be divisible by BLOCK_SIZE");
+    cbu::check_divisible(size, BLOCK_SIZE, "Global size must be divisible by BLOCK_SIZE");
     size_t grid_size = size / BLOCK_SIZE;
 
     cudaGraph_t graph;
@@ -65,6 +65,8 @@ void with_graph(thrust::device_vector<T> &data, thrust::device_vector<T> &out, s
 
 
 int main() {
+    using namespace cbu;
+
     using dtype = float;
     using d_vec = thrust::device_vector<dtype>;
     constexpr uint16_t block_size = 256;
