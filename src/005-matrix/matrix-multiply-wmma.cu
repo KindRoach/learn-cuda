@@ -109,7 +109,7 @@ void test_matrix_multiply()
     random_fill(a);
     random_fill(b);
 
-    std::cout << "matrix_transpose_ref:\n";
+    std::cout << "matrix_multiply_ref:\n";
     benchmark_func_by_time(secs, [&]
     {
         matrix_multiply_ref<dtype, acc_type, b_layout>(a, b, c, m, n, k);

@@ -5,36 +5,6 @@
 // C = A x B : [m,n] in row-major
 
 template <typename T, cbu::matrix_layout b_layout>
-void matrix_multiply_ref(
-    std::vector<T>& a,
-    std::vector<T>& b,
-    std::vector<T>& c,
-    size_t m, size_t n, size_t k)
-{
-    using namespace cbu;
-    size_t lda = k, ldb = b_layout == matrix_layout::row_major ? n : k, ldc = n;
-    for (size_t i = 0; i < m; i++)
-    {
-        for (size_t j = 0; j < n; j++)
-        {
-            T sum = 0;
-            for (size_t p = 0; p < k; p++)
-            {
-                if constexpr (b_layout == matrix_layout::row_major)
-                {
-                    sum += mat(a.data(), lda, i, p) * mat(b.data(), ldb, p, j);
-                }
-                else
-                {
-                    sum += mat(a.data(), lda, i, p) * mat(b.data(), ldb, j, p);
-                }
-            }
-            mat(c.data(), ldc, i, j) = sum;
-        }
-    }
-}
-
-template <typename T, cbu::matrix_layout b_layout>
 __global__ void matrix_multiply_naive_kernel(T* a, T* b, T* c, size_t m, size_t n, size_t k)
 {
     using namespace cbu;
@@ -154,7 +124,7 @@ void test_matrix_multiply()
     random_fill(a);
     random_fill(b);
 
-    std::cout << "matrix_transpose_ref:\n";
+    std::cout << "benchmark_func_by_time:\n";
     benchmark_func_by_time(secs, [&]
     {
         matrix_multiply_ref<dtype, b_layout>(a, b, c, m, n, k);
