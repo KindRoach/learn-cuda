@@ -24,7 +24,7 @@ __global__ void matrix_multiply_naive_kernel(T* a, T* b, T* c, size_t m, size_t 
             sum += mat(a, lda, y, i) * mat(b, ldb, x, i);
         }
     }
-    cbu::mat(c, ldc, y, x) = sum;
+    mat(c, ldc, y, x) = sum;
 }
 
 template <typename T, cbu::matrix_layout b_layout, size_t BLOCK_SIZE>

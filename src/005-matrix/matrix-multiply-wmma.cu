@@ -7,30 +7,47 @@
 // C = A x B : [m,n] in row-major
 
 template <typename dtype, typename acc_type, cbu::matrix_layout b_layout>
-void matrix_multiply_ref(
-    std::vector<dtype>& a,
-    std::vector<dtype>& b,
-    std::vector<acc_type>& c,
-    size_t m, size_t n, size_t k)
+__global__ void matrix_multiply_ref_kernel(dtype* a, dtype* b, acc_type* c, size_t m, size_t n, size_t k)
 {
     using namespace cbu;
     size_t lda = k, ldb = b_layout == matrix_layout::row_major ? n : k, ldc = n;
-    for (size_t i = 0; i < m; i++)
+    size_t x = blockIdx.x * blockDim.x + threadIdx.x;
+    size_t y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    acc_type sum = 0;
+    for (size_t i = 0; i < k; i++)
     {
-        for (size_t j = 0; j < n; j++)
+        if constexpr (b_layout == matrix_layout::row_major)
         {
-            acc_type sum = 0;
-            for (size_t p = 0; p < k; p++)
-            {
-                acc_type a_ele = static_cast<acc_type>(mat(a.data(), lda, i, p));
-                acc_type b_ele = static_cast<acc_type>(mat(b.data(), ldb,
-                                                           b_layout == matrix_layout::row_major ? p : j,
-                                                           b_layout == matrix_layout::row_major ? j : p));
-                sum += a_ele * b_ele;
-            }
-            mat(c.data(), ldc, i, j) = sum;
+            sum += static_cast<acc_type>(mat(a, lda, y, i))
+                * static_cast<acc_type>(mat(b, ldb, i, x));
+        }
+        else
+        {
+            sum += static_cast<acc_type>(mat(a, lda, y, i))
+                * static_cast<acc_type>(mat(b, ldb, x, i));
         }
     }
+    mat(c, ldc, y, x) = sum;
+}
+
+template <typename dtype, typename acc_type, cbu::matrix_layout b_layout, size_t BLOCK_SIZE>
+void matrix_multiply_ref(
+    thrust::device_vector<dtype>& a,
+    thrust::device_vector<dtype>& b,
+    thrust::device_vector<acc_type>& c,
+    size_t m, size_t n, size_t k)
+{
+    cbu::check_divisible(m, BLOCK_SIZE, "M must be divisible by BLOCK_SIZE");
+    cbu::check_divisible(n, BLOCK_SIZE, "N must be divisible by BLOCK_SIZE");
+    dim3 grid_range = dim3(n / BLOCK_SIZE, m / BLOCK_SIZE);
+    dim3 block_range = dim3(BLOCK_SIZE, BLOCK_SIZE);
+    matrix_multiply_ref_kernel<dtype, acc_type, b_layout><<<grid_range, block_range>>>(
+        thrust::raw_pointer_cast(a.data()),
+        thrust::raw_pointer_cast(b.data()),
+        thrust::raw_pointer_cast(c.data()),
+        m, n, k
+    );
 }
 
 template <typename dtype, typename acc_type, cbu::matrix_layout b_layout, size_t WM, size_t WN, size_t WK>
@@ -67,7 +84,8 @@ __global__ void matrix_multiply_wmma_kernel(dtype* a, dtype* b, acc_type* c, int
     nvcuda::wmma::store_matrix_sync(tile_c, c_frag, ldc, nvcuda::wmma::mem_row_major);
 }
 
-template <typename dtype, typename acc_type, cbu::matrix_layout b_layout, size_t BLOCK_WRAP_NUM, size_t WM, size_t WN, size_t WK>
+template <typename dtype, typename acc_type, cbu::matrix_layout b_layout, size_t BLOCK_WRAP_NUM, size_t WM, size_t WN,
+          size_t WK>
 void matrix_multiply_wmma(
     thrust::device_vector<dtype>& a,
     thrust::device_vector<dtype>& b,
@@ -105,19 +123,19 @@ void test_matrix_multiply()
     size_t m = 2 * 1024, n = 512, k = 1024;
 
     std::vector<dtype> a(m * k), b(k * n);
-    std::vector<acc_type> c(m * n);
     random_fill(a);
     random_fill(b);
+
+    d_vec d_a = a;
+    d_vec d_b = b;
+    d_vec_acc d_c(m * n);
+    d_vec_acc d_c_ref(m * n);
 
     std::cout << "matrix_multiply_ref:\n";
     benchmark_func_by_time(secs, [&]
     {
-        matrix_multiply_ref<dtype, acc_type, b_layout>(a, b, c, m, n, k);
+        matrix_multiply_ref<dtype, acc_type, b_layout, 32>(d_a, d_b, d_c_ref, m, n, k);
     });
-
-    d_vec d_a = a;
-    d_vec d_b = b;
-    d_vec_acc d_c(c.size());
 
     using func_t = std::function<void(d_vec&, d_vec&, d_vec_acc&, size_t, size_t, size_t)>;
     std::vector<std::tuple<std::string, func_t>> funcs{
@@ -133,7 +151,7 @@ void test_matrix_multiply()
             func(d_a, d_b, d_c, m, n, k);
             cuda_check(cudaDeviceSynchronize());
         });
-        cuda_acc_check(c, d_c);
+        cuda_acc_check(d_c_ref, d_c);
     }
 }
 
