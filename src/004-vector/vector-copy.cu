@@ -101,9 +101,12 @@ int main() {
     for (auto [func_name,func]: funcs) {
         std::cout << "\n" << func_name << ":\n";
         fill(d_dst.begin(), d_dst.end(), 0);
-        benchmark_func_by_time(secs, [&]() {
+        benchmark_func_by_time(secs, [&]()
+        {
             func(d_src, d_dst);
             cuda_check(cudaDeviceSynchronize());
+        }, {
+            .total_mem_bytes = size * sizeof(dtype) * 2
         });
         cuda_acc_check(vec, d_dst);
     }

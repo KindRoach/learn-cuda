@@ -70,9 +70,13 @@ int main() {
     random_fill(vec_b);
 
     std::cout << "vector_add_ref:\n";
+    BenchmarkOptions opt{
+        .total_mem_bytes = size * sizeof(dtype) * 3,
+        .total_flop = size
+    };
     benchmark_func_by_time(secs, [&]() {
         vector_add_ref(vec_a, vec_b, vec_c);
-    });
+    }, opt);
 
     d_vec d_a = vec_a;
     d_vec d_b = vec_b;
@@ -90,7 +94,7 @@ int main() {
         benchmark_func_by_time(secs, [&]() {
             func(d_a, d_b, d_c);
             cuda_check(cudaDeviceSynchronize());
-        });
+        }, opt);
         cuda_acc_check(vec_c, d_c);
     }
 }

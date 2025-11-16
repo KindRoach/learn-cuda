@@ -163,7 +163,7 @@ void vector_sum_block_reduce_multi_ele(thrust::device_vector<T>& vec, thrust::de
 
     size_t size = vec.size();
     cbu::check_divisible(size, BLOCK_SIZE * THREAD_SIZE,
-                    "Global size must be divisible by BLOCK_SIZE * THREAD_SIZE");
+                         "Global size must be divisible by BLOCK_SIZE * THREAD_SIZE");
 
     size_t grid_size = size / (BLOCK_SIZE * THREAD_SIZE);
     thrust::fill(out.begin(), out.end(), T{0});
@@ -185,6 +185,7 @@ void vector_sum_block_reduce_multi_ele(thrust::device_vector<T>& vec, thrust::de
 
 int main()
 {
+    using namespace cbu;
     using dtype = int;
     constexpr uint16_t block_size = 256;
     constexpr uint8_t thread_size = 4;
@@ -193,10 +194,14 @@ int main()
     size_t size = 100 * 1024 * 1024; // 100M elements
 
     std::vector<dtype> vec(size), out_ref(1);
-    cbu::random_fill(vec);
+    random_fill(vec);
 
     std::cout << "vector_sum_ref:\n";
-    cbu::benchmark_func_by_time(secs, [&] { vector_sum_ref(vec, out_ref); });
+    BenchmarkOptions opt{
+        .total_mem_bytes = size * sizeof(dtype),
+        .total_flop = size - 1
+    };
+    benchmark_func_by_time(secs, [&] { vector_sum_ref(vec, out_ref); }, opt);
 
     thrust::device_vector<dtype> d_vec = vec;
     thrust::device_vector<dtype> d_out(1);
@@ -220,13 +225,13 @@ int main()
     for (auto [func_name, func] : funcs)
     {
         std::cout << "\n" << func_name << ":\n";
-        thrust::fill(d_out.begin(), d_out.end(), dtype{0});
-        cbu::benchmark_func_by_time(secs, [&]()
+        fill(d_out.begin(), d_out.end(), dtype{0});
+        benchmark_func_by_time(secs, [&]()
         {
             func(d_vec, d_out);
-            cbu::cuda_check(cudaDeviceSynchronize());
-        });
+            cuda_check(cudaDeviceSynchronize());
+        }, opt);
 
-        cbu::cuda_acc_check(out_ref, d_out);
+        cuda_acc_check(out_ref, d_out);
     }
 }

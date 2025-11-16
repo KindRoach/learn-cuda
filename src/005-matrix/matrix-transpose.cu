@@ -105,7 +105,10 @@ int main()
     random_fill(src);
 
     std::cout << "matrix_transpose_ref:\n";
-    benchmark_func_by_time(secs, [&] { matrix_transpose_ref(src, dst, m, n); });
+    BenchmarkOptions opt{
+        .total_mem_bytes = 2 * m * n * sizeof(dtype),
+    };
+    benchmark_func_by_time(secs, [&] { matrix_transpose_ref(src, dst, m, n); }, opt);
 
     d_vec d_src = src;
     d_vec d_dst(size);
@@ -134,7 +137,7 @@ int main()
         {
             func(d_src, d_dst, m, n);
             cuda_check(cudaDeviceSynchronize());
-        });
+        }, opt);
         cuda_acc_check(dst, d_dst);
     }
 }

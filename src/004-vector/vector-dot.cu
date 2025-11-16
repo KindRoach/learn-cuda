@@ -74,7 +74,11 @@ int main()
     random_fill(b);
 
     std::cout << "vector_dot_ref:\n";
-    benchmark_func_by_time(secs, [&] { vector_dot_ref(a, b, out_ref); });
+    BenchmarkOptions opt{
+        .total_mem_bytes = size * sizeof(dtype) * 2,
+        .total_flop = size * 2,
+    };
+    benchmark_func_by_time(secs, [&] { vector_dot_ref(a, b, out_ref); }, opt);
 
     d_vec d_a = a;
     d_vec d_b = b;
@@ -94,7 +98,7 @@ int main()
         {
             func(d_a, d_b, d_out);
             cuda_check(cudaDeviceSynchronize());
-        });
+        }, opt);
 
         cuda_acc_check(out_ref, d_out);
     }

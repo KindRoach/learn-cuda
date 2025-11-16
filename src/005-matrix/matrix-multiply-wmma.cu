@@ -132,10 +132,14 @@ void test_matrix_multiply()
     d_vec_acc d_c_ref(m * n);
 
     std::cout << "matrix_multiply_ref:\n";
+    BenchmarkOptions opt{
+        .total_mem_bytes = (m * k + k * n) * sizeof(dtype) + (m * n) * sizeof(acc_type),
+        .total_flop = 2 * m * n * k,
+    };
     benchmark_func_by_time(secs, [&]
     {
         matrix_multiply_ref<dtype, acc_type, b_layout, 32>(d_a, d_b, d_c_ref, m, n, k);
-    });
+    }, opt);
 
     using func_t = std::function<void(d_vec&, d_vec&, d_vec_acc&, size_t, size_t, size_t)>;
     std::vector<std::tuple<std::string, func_t>> funcs{
@@ -150,7 +154,7 @@ void test_matrix_multiply()
         {
             func(d_a, d_b, d_c, m, n, k);
             cuda_check(cudaDeviceSynchronize());
-        });
+        }, opt);
         cuda_acc_check(d_c_ref, d_c);
     }
 }
