@@ -139,6 +139,7 @@ void test_matrix_multiply()
     benchmark_func_by_time(secs, [&]
     {
         matrix_multiply_ref<dtype, acc_type, b_layout, 32>(d_a, d_b, d_c_ref, m, n, k);
+        cuda_check(cudaDeviceSynchronize());
     }, opt);
 
     using func_t = std::function<void(d_vec&, d_vec&, d_vec_acc&, size_t, size_t, size_t)>;
