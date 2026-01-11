@@ -9,6 +9,18 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(src_root "${CMAKE_CURRENT_SOURCE_DIR}/src")
 file(GLOB_RECURSE sources "${src_root}/*.cu")
 
+# Set global include directories and compilation flags
+include_directories(
+        "${src_root}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/cpp-bench-utils/include"
+)
+
+# Set CUDA architectures to native
+set(CUDA_ARCHITECTURES native)
+
+# Enable line info for nsight compute profiling source view
+set(CMAKE_CUDA_FLAGS "-lineinfo")
+
 # For each .cu source file, create an individual executable
 # Preserves directory structure relative to src/
 foreach (file_path ${sources})
@@ -23,15 +35,6 @@ foreach (file_path ${sources})
 
     # Add target
     add_executable("${target_name}" "${file_path}")
-
-    # Include the src directory for headers
-    target_include_directories("${target_name}" PRIVATE
-            "${src_root}"
-            "${CMAKE_CURRENT_SOURCE_DIR}/cpp-bench-utils/include"
-    )
-
-    # Set CUDA architectures
-    set_property(TARGET ${target_name} PROPERTY CUDA_ARCHITECTURES native)
 
     set_target_properties("${target_name}" PROPERTIES
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/${target_dir}"
