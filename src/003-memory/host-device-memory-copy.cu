@@ -1,9 +1,10 @@
 #include "cpp-bench-utils/utils.hpp"
 
-void naive_copy(void* src, void* dst, size_t bytes)
+void naive_copy(const void* src, void* dst, size_t bytes, cudaMemcpyKind kind)
 {
-    cudaMemcpy(dst, src, bytes, cudaMemcpyHostToDevice);
+    cbu::cuda_check(cudaMemcpy(dst, src, bytes, kind));
 }
+
 
 int main()
 {
@@ -23,25 +24,26 @@ int main()
 
     thrust::device_vector<dtype> d_vec(size);
 
-    using func_t = std::function<void()>;
-    std::vector<std::tuple<std::string, dtype*>> funcs{
-        {"normal host memory", h_vec.data()},
-        {"pinned host memory", h_pinned}
+    std::vector<std::tuple<std::string, const void*, void*, cudaMemcpyKind>> funcs{
+        {"normal host -> device", h_vec.data(), raw_pointer_cast(d_vec.data()), cudaMemcpyHostToDevice},
+        {"pinned host -> device", h_pinned, raw_pointer_cast(d_vec.data()), cudaMemcpyHostToDevice},
+        {"device -> normal host", raw_pointer_cast(d_vec.data()), h_vec.data(), cudaMemcpyDeviceToHost},
+        {"device -> pinned host", raw_pointer_cast(d_vec.data()), h_pinned, cudaMemcpyDeviceToHost},
     };
 
-    for (auto [memory_name,src_ptr] : funcs)
+    for (auto [memory_name, src_ptr, dst_ptr, kind] : funcs)
     {
         std::cout << "\n" << memory_name << ":\n";
-        fill(d_vec.begin(), d_vec.end(), 0);
         benchmark_func_by_time(
             secs,
             [&]()
             {
-                naive_copy(src_ptr, raw_pointer_cast(d_vec.data()), bytes);
+                naive_copy(src_ptr, dst_ptr, bytes, kind);
             }, {
                 .total_mem_bytes = sizeof(dtype) * size
             }
         );
-        cuda_acc_check(h_vec, d_vec);
     }
+
+    cuda_check(cudaFreeHost(h_pinned));
 }
