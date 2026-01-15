@@ -18,8 +18,13 @@ include_directories(
 # Set CUDA architectures to native
 set(CUDA_ARCHITECTURES native)
 
-# Enable line info for nsight compute profiling source view
-set(CMAKE_CUDA_FLAGS "-lineinfo")
+
+# Enable line info and disable optimization
+# for nsight compute profiling PTX reading and analysis
+if (CMAKE_BUILD_TYPE MATCHES "Debug|RelWithDebInfo")
+    set(CMAKE_CUDA_FLAGS "-O0")
+    set(CMAKE_CUDA_FLAGS "-lineinfo")
+endif ()
 
 # For each .cu source file, create an individual executable
 # Preserves directory structure relative to src/
