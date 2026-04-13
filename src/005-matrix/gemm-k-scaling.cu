@@ -165,7 +165,7 @@ void test_gemm()
     constexpr size_t block_size = 32;
 
     size_t bench_secs = 10;
-    size_t m = 2048, n = 2048, k = 4096;  // k=4096=2^12 allows BK up to 512
+    size_t m = 4096, n = 4096, k = 4096;  // k=4096=2^12 allows BK up to 512
 
     std::vector<dtype> h_a(m * k), h_b(k * n), h_c_ref(m * n);
     random_fill(h_a);
@@ -176,21 +176,22 @@ void test_gemm()
         .total_flop = 2 * m * n * k,
     };
 
-    // CPU reference result
-    std::cout << "=== CPU Reference ===\n";
-    benchmark_func_by_time(bench_secs, [&]
-    {
-        matrix_multiply_ref<dtype, matrix_layout::row_major>(h_a, h_b, h_c_ref, m, n, k);
-    }, opt);
-
     d_vec d_a = h_a;
     d_vec d_b = h_b;
     d_vec d_c(m * n);
 
+    // GPU reference result using gemm_naive
+    std::cout << "=== gemm_naive (reference) ===\n";
+    thrust::fill(d_c.begin(), d_c.end(), static_cast<dtype>(0));
+    benchmark_func_by_time(bench_secs, [&]
+    {
+        gemm_naive<dtype, block_size>(d_a, d_b, d_c, m, n, k);
+        cuda_check(cudaDeviceSynchronize());
+    }, opt);
+    thrust::copy(d_c.begin(), d_c.end(), h_c_ref.begin());
+
     using func_t = std::function<void(d_vec&, d_vec&, d_vec&, size_t, size_t, size_t)>;
     std::vector<std::tuple<std::string, func_t>> kernels{
-        {"gemm_naive",                    gemm_naive<dtype, block_size>},
-
         // BM=BN=64: smem = (64+64)*BK*4 bytes, max BK=96 → 64. 256 threads/block.
         {"gemm_blocked<64,64,  1,4,4>",   gemm_blocked<dtype, 64, 64,   1, 4, 4>},
         {"gemm_blocked<64,64,  2,4,4>",   gemm_blocked<dtype, 64, 64,   2, 4, 4>},
